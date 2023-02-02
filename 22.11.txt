@@ -1,0 +1,2300 @@
+use Modern::Perl;
+use utf8;
+use Encode qw( encode_utf8 );
+
+return {
+    bug_number => undef,
+    description => 'Increase DBRev for 22.06',
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        say $out encode_utf8 '📜 The road of excess';
+        say $out encode_utf8 '📜 leads to the palace of wisdom;';
+        say $out encode_utf8 '📜 for we never know what is enough';
+        say $out encode_utf8 '📜 until we know what is more than enough.';
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number => "23659",
+    description => "Add DefaultHoldPickupLocation syspref",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        # Do you stuffs here
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('DefaultHoldPickupLocation','loggedinlibrary','loggedinlibrary|homebranch|holdingbranch','Which branch should a hold pickup location default to. ','choice')
+        });
+        # Print useful stuff here
+        say $out "Added DefaultHoldPickupLocation syspref";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => 30850,
+    description => 'Message about mappings changes for 110$a',
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        say $out
+q|110$a was added as a default mapping for biblio.author in MARC21. This will only change the mapping on new installations. If you wish to change the mappings on your existing installation, go to Administration > Koha to MARC mapping and add 110$a to biblio.author and then run batchRebuilBiblioTables.pl.|;
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number  => 30924,
+    description => "Add missing RecallCancellation option to branchtransfers.reason ENUM",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh) = @$args{qw(dbh)};
+
+        # Add RecallCancellation ENUM option to branchtransfers.reason
+        $dbh->do(q{
+            ALTER TABLE branchtransfers MODIFY COLUMN reason
+            ENUM('Manual','StockrotationAdvance','StockrotationRepatriation','ReturnToHome','ReturnToHolding','RotatingCollection','Reserve','LostReserve','CancelReserve','TransferCancellation','Recall','RecallCancellation') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'what triggered the transfer'
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "12446",
+    description => "Ability to allow guarantor relationship for all patron category types",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh) = @$args{qw(dbh)};
+
+        unless ( column_exists( 'categories', 'can_be_guarantee' ) ) {
+            $dbh->do(q{
+                ALTER TABLE categories
+                    ADD COLUMN `can_be_guarantee` tinyint(1) NOT NULL default 0 COMMENT 'if patrons of this category can be guarantees'
+                    AFTER `checkprevcheckout`
+            });
+        }
+
+        $dbh->do(q{
+            UPDATE categories
+            SET can_be_guarantee = 1
+            WHERE category_type = 'P' OR category_type = 'C'
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "24239",
+    description => "Add due_date to illrequests",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        unless ( column_exists( 'illrequests', 'due_date' ) ) {
+            $dbh->do(q{
+                ALTER TABLE `illrequests`
+                    ADD COLUMN `due_date` datetime DEFAULT NULL COMMENT 'Custom date due specified by backend, leave NULL for default date_due calculation'
+                    AFTER `biblio_id`
+            });
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "21978",
+    description => "Add middle_name to borrowers table",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        if( !column_exists( 'borrowers', 'middle_name' ) ) {
+            $dbh->do(q{
+                ALTER TABLE borrowers
+                ADD COLUMN middle_name longtext NULL DEFAULT NULL
+                COMMENT "patron/borrower's middle name"
+                AFTER firstname
+            });
+            say $out "Added middle name column to borrowers table";
+        }
+        if( !column_exists( 'deletedborrowers', 'middle_name' ) ) {
+            $dbh->do(q{
+                ALTER TABLE deletedborrowers
+                ADD COLUMN middle_name longtext NULL DEFAULT NULL
+                COMMENT "patron/borrower's middle name"
+                AFTER firstname
+            });
+            say $out "Added middle name column to deletedborrowers table";
+        }
+        if( !column_exists( 'borrower_modifications', 'middle_name' ) ) {
+            $dbh->do(q{
+                ALTER TABLE borrower_modifications
+                ADD COLUMN middle_name longtext NULL DEFAULT NULL
+                COMMENT "patron/borrower's middle name"
+                AFTER firstname
+            });
+            say $out "Added middle name column to borrower_modifications table";
+        }
+
+        my ($default_patron_search_fields) = $dbh->selectrow_array( q{
+            SELECT value FROM systempreferences WHERE variable='DefaultPatronSearchFields';
+        });
+        my @default_patron_search_fields = split(',', $default_patron_search_fields);
+        unless( grep /middle_name/, @default_patron_search_fields ){
+            if ( $default_patron_search_fields eq 'firstname,surname,othernames,cardnumber,userid' ) {
+                $dbh->do(q{
+                    UPDATE systempreferences SET value=? WHERE variable='DefaultPatronSearchFields'
+                }, undef, 'firstname,middle_name,surname,othernames,cardnumber,userid');
+                say $out "Added middle name to DefaultPatronSearchFields";
+            } elsif( grep /firstname/, @default_patron_search_fields ){
+                push @default_patron_search_fields,'middle_name';
+                my $new_patron_search_fields = join(',',@default_patron_search_fields);
+                $dbh->do(q{
+                    UPDATE systempreferences SET value=? WHERE variable='DefaultPatronSearchFields'
+                }, undef, $new_patron_search_fields);
+                say $out "Added middle name to DefaultPatronSearchFields";
+            } else {
+                say $out "Please add 'middlename' to DefaultPatronSearchFields if you want it searched by default";
+            }
+        }
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number  => "29129",
+    description => "Update the DisplayClearnScreenButton system pref to allow for a choice between ISSUESLIP and ISSUEQSLIP",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            UPDATE systempreferences
+            SET
+                options = 'no|issueslip|issueqslip',
+                   type = 'Choice',
+                  value = CASE value
+                              WHEN 1 THEN 'issueslip'
+                              ELSE 'no'
+                          END
+            WHERE variable = 'DisplayClearScreenButton';
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30327",
+    description => "Add ComponentSortField and ComponentSortOrder sysprefs",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('ComponentSortField','title','call_number|pubdate|acqdate|title|author','Specify the default field used for sorting','Choice'),
+            ('ComponentSortOrder','asc','asc|dsc|az|za','Specify the default sort order','Choice')
+        });
+        say $out "Added ComponentSortField and ComponentSortOrder sysprefs";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30889",
+    description => "Add calling context information to background_jobs",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        unless( column_exists( 'background_jobs', 'context') ) {
+            $dbh->do(q{
+                ALTER TABLE background_jobs
+                    ADD `context` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL
+                    COMMENT 'JSON-serialized context information for the job'
+                    AFTER `data`
+            });
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30823",
+    description => "Replace recalls FULFILL actions with FILL in action logs",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{ UPDATE action_logs SET action = 'FILL' WHERE action = 'FULFILL' AND module = 'RECALLS' });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30275",
+    description => "Add a checkout_renewals table",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        unless ( TableExists('checkout_renewals') ) {
+            $dbh->do(q{
+                CREATE TABLE `checkout_renewals` (
+                  `renewal_id` int(11) NOT NULL auto_increment,
+                  `checkout_id` int(11) DEFAULT NULL COMMENT 'the id of the checkout this renewal pertains to',
+                  `renewer_id` int(11) DEFAULT NULL COMMENT 'the id of the user who processed the renewal',
+                  `seen` tinyint(1) DEFAULT 0 COMMENT 'boolean denoting whether the item was present or not',
+                  `interface` varchar(16) NOT NULL COMMENT 'the interface this renewal took place on',
+                  `timestamp` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'the date and time the renewal took place',
+                  PRIMARY KEY(`renewal_id`),
+                  KEY `renewer_id` (`renewer_id`),
+                  CONSTRAINT `renewals_renewer_id` FOREIGN KEY (`renewer_id`) REFERENCES `borrowers` (`borrowernumber`) ON DELETE SET NULL ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            });
+            say $out "Added new table 'checkout_renewals'";
+
+            $dbh->do(q{ ALTER TABLE `issues` CHANGE `renewals` `renewals_count` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'lists the number of times the item was renewed' });
+            say $out "Renamed `issues.renewals` to `issues.renewals_count`";
+
+            $dbh->do(q{ ALTER TABLE `old_issues` CHANGE `renewals` `renewals_count` tinyint(4) NOT NULL DEFAULT 0 COMMENT 'lists the number of times the item was renewed' });
+            say $out "Renamed `old_issues.renewals` to `old_issues.renewals_count`";
+        }
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number => "24010",
+    description => "Make subscription.staffdisplaycount and opacdisplaycount integer columns",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            UPDATE subscription
+            SET staffdisplaycount = NULL
+            WHERE staffdisplaycount = ""
+        });
+        $dbh->do(q{
+            ALTER TABLE subscription
+            MODIFY COLUMN staffdisplaycount INT(11) NULL DEFAULT NULL
+            COMMENT 'how many issues to show to the staff'
+        });
+
+        $dbh->do(q{
+            UPDATE subscription
+            SET opacdisplaycount = NULL
+            WHERE opacdisplaycount = ""
+        });
+        $dbh->do(q{
+            ALTER TABLE subscription
+            MODIFY COLUMN opacdisplaycount INT(11) NULL DEFAULT NULL
+            COMMENT 'how many issues to show to the public'
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "24865",
+    description => "Customize the Accountlines Description",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO letter
+            (module,code,branchcode,name,is_html,title,content,message_transport_type,lang)
+            VALUES ('circulation','OVERDUE_FINE_DESC','','Overdue item fine description',0,'Overdue item fine description','[% item.biblio.title %] [% checkout.date_due | $KohaDates %]','print','default')
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "24857",
+    description => "Add ability to group items on a record",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('EnableItemGroups','0','','Enable the item groups feature','YesNo');
+        });
+
+        $dbh->do(q{
+            INSERT IGNORE INTO permissions (module_bit, code, description) VALUES
+            ( 9, 'manage_item_groups', 'Create, update and delete item groups, add or remove items from a item groups');
+        });
+
+        unless ( TableExists('item_groups') ) {
+            $dbh->do(q{
+                CREATE TABLE `item_groups` (
+                    `item_group_id` INT(11) NOT NULL auto_increment COMMENT "id for the items group",
+                    `biblio_id` INT(11) NOT NULL DEFAULT 0 COMMENT "id for the bibliographic record the group belongs to",
+                    `display_order` INT(4) NOT NULL DEFAULT 0 COMMENT "The 'sort order' for item_groups",
+                    `description` MEDIUMTEXT default NULL COMMENT "A group description",
+                    `created_on` TIMESTAMP NULL COMMENT "Time and date the group was created",
+                    `updated_on` TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT "Time and date of the latest change on the group",
+                    PRIMARY KEY  (`item_group_id`),
+                    CONSTRAINT `item_groups_ibfk_1` FOREIGN KEY (`biblio_id`) REFERENCES `biblio` (`biblionumber`) ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            });
+        }
+
+        unless ( TableExists('item_group_items') ) {
+            $dbh->do(q{
+                CREATE TABLE `item_group_items` (
+                    `item_group_items_id` int(11) NOT NULL auto_increment COMMENT "id for the group/item link",
+                    `item_group_id` INT(11) NOT NULL DEFAULT 0 COMMENT "foreign key making this table a 1 to 1 join from items to item groups",
+                    `item_id` INT(11) NOT NULL DEFAULT 0 COMMENT "foreign key linking this table to the items table",
+                    PRIMARY KEY  (`item_group_items_id`),
+                    UNIQUE KEY (`item_id`),
+                    CONSTRAINT `item_group_items_iifk_1` FOREIGN KEY (`item_id`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+                    CONSTRAINT `item_group_items_gifk_1` FOREIGN KEY (`item_group_id`) REFERENCES `item_groups` (`item_group_id`) ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            });
+        }
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number => "28854",
+    description => "Item bundles support",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        if( !TableExists( 'item_bundles' ) ) {
+            $dbh->do(q{
+                CREATE TABLE `item_bundles` (
+                  `item` int(11) NOT NULL,
+                  `host` int(11) NOT NULL,
+                  PRIMARY KEY (`host`, `item`),
+                  UNIQUE KEY `item_bundles_uniq_1` (`item`),
+                  CONSTRAINT `item_bundles_ibfk_1` FOREIGN KEY (`item`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE,
+                  CONSTRAINT `item_bundles_ibfk_2` FOREIGN KEY (`host`) REFERENCES `items` (`itemnumber`) ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            });
+        }
+        say $out "item_bundles table added";
+
+        my ($lost_val) = $dbh->selectrow_array( "SELECT MAX(CAST(authorised_value AS SIGNED)) FROM authorised_values WHERE category = 'LOST'", {} );
+        $lost_val++;
+
+        $dbh->do(qq{
+           INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('LOST',$lost_val,'Missing from bundle')
+        });
+        say $out "Missing from bundle LOST AV added";
+
+        my ($nfl_val) = $dbh->selectrow_array( "SELECT MAX(CAST(authorised_value AS SIGNED)) FROM authorised_values WHERE category = 'NOT_LOAN'", {} );
+        $nfl_val++;
+
+        $dbh->do(qq{
+           INSERT INTO authorised_values (category,authorised_value,lib) VALUES ('NOT_LOAN',$nfl_val,'Added to bundle')
+        });
+        say $out "Added to bundle NOT_LOAN AV added";
+
+        $dbh->do(qq{
+            INSERT IGNORE INTO systempreferences( `variable`, `value`, `options`, `explanation`, `type` )
+            VALUES
+              ( 'BundleLostValue', $lost_val, '', 'Sets the LOST AV value that represents "Missing from bundle" as a lost value', 'Free' ),
+              ( 'BundleNotLoanValue', $nfl_val, '', 'Sets the NOT_LOAN AV value that represents "Added to bundle" as a not for loan value', 'Free')
+        });
+        say $out "System preferences added and set";
+
+        if( index_exists( 'return_claims', 'issue_id' ) ) {
+            $dbh->do(q{
+                ALTER TABLE return_claims DROP INDEX issue_id
+            });
+            say $out "Dropped unique constraint on issue_id in return_claims";
+        }
+    }
+}
+use Modern::Perl;
+
+return {
+    bug_number => "28854",
+    description => "Add new unique index to return claims",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        if ( !unique_key_exists('return_claims', 'item_issue') ) {
+            $dbh->do(q{
+                ALTER TABLE return_claims
+                ADD UNIQUE KEY item_issue (`itemnumber`,`issue_id`)
+            });
+            say $out "item_issue index added to return_claims";
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "29632",
+    description => "Add callnumber type to allow sorting",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            ALTER TABLE `search_field` MODIFY COLUMN `type`
+            enum('','string','date','number','boolean','sum','isbn','stdno','year','callnumber') NOT NULL
+            COMMENT 'what type of data this holds, relevant when storing it in the search engine'
+        });
+        say $out "Add callnumber to search_field type enum";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => 11889,
+    description => "Add pref ListOwnershipUponPatronDeletion",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+INSERT IGNORE INTO systempreferences (`variable`,`value`,`options`,`explanation`,`type`) VALUES ('ListOwnershipUponPatronDeletion', 'delete', 'delete|transfer', 'When deleting a patron who owns public lists, either delete the public lists or transfer ownership to the patron who deleted the owner', 'Choice');
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => 30933,
+    description => "Add pref ListOwnerDesignated",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type)
+VALUES ('ListOwnerDesignated', NULL, NULL, 'Designated list owner at patron deletion', 'Free')
+        });
+        $dbh->do(q{
+UPDATE systempreferences SET explanation='Defines the action on their public or shared lists when patron is deleted'
+WHERE variable = 'ListOwnershipUponPatronDeletion'
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31086",
+    description => "Do not allow null values in branchcodes for reserves",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        my $sth = $dbh->prepare(q{
+            SELECT borrowernumber, biblionumber
+            FROM reserves
+	        WHERE branchcode IS NULL;
+        });
+        $sth->execute;
+        my $holds_no_branch = $sth->fetchall_arrayref( {} );
+
+        if ( scalar @{$holds_no_branch} > 0 ) {
+            say $out "Holds with no branchcode were found and will be updated to the first branch in the system";
+            foreach my $hnb ( @{$holds_no_branch} ) {
+                say $out "Please review hold for borrowernumber "
+                  . $hnb->{borrowernumber}
+                  . " on biblionumber "
+                  . $hnb->{biblionumber}
+                  . " to correct pickup branch if necessary";
+            }
+        }
+
+        # Ensure we have no NULL's in the branchcode field
+        $dbh->do(q{
+            UPDATE reserves SET branchcode = ( SELECT branchcode FROM branches LIMIT 1) WHERE branchcode IS NULL;
+        });
+
+        # Remove FOREIGN KEY CONSTRAINT
+        if ( foreign_key_exists( 'reserves', 'reserves_ibfk_4' ) ) {
+            $dbh->do(q{
+                ALTER TABLE reserves DROP FOREIGN KEY reserves_ibfk_4;
+            });
+        }
+
+        # Set the NOT NULL configuration
+        $dbh->do(q{
+            ALTER TABLE reserves
+            MODIFY COLUMN `branchcode` varchar(10) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'foreign key from the branches table defining which branch the patron wishes to pick this hold up at'
+        });
+        # Replace the constraint
+        $dbh->do(q{
+            ALTER TABLE reserves ADD CONSTRAINT reserves_ibfk_4 FOREIGN KEY (branchcode) REFERENCES `branches` (`branchcode`) ON DELETE CASCADE ON UPDATE CASCADE;
+        });
+
+        # Print useful stuff here
+        say $out "Removed NULL option from branchcode for reserves";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31157",
+    description => "Add OverdueNoticeFrom preference",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+                ('OverdueNoticeFrom', 'cron', 'cron|item-issuebranch|item-homebranch', 'Organize and send overdue notices by item home library or checkout library', 'Choice')
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "30650",
+    description => "Curbside pickup tables",
+    up          => sub {
+        my ($args) = @_;
+        my ( $dbh, $out ) = @$args{qw(dbh out)};
+        unless ( TableExists('curbside_pickup_policy') ) {
+            $dbh->do(
+                q{
+            CREATE TABLE `curbside_pickup_policy` (
+              `id` int(11) NOT NULL auto_increment,
+              `branchcode` varchar(10) NOT NULL,
+              `enabled` TINYINT(1) NOT NULL DEFAULT 0,
+              `pickup_interval` INT(2) NOT NULL DEFAULT 0,
+              `patrons_per_interval` INT(2) NOT NULL DEFAULT 0,
+              `patron_scheduled_pickup` TINYINT(1) NOT NULL DEFAULT 0,
+              `sunday_start_hour` INT(2) NULL DEFAULT NULL,
+              `sunday_start_minute` INT(2) NULL DEFAULT NULL,
+              `sunday_end_hour` INT(2) NULL DEFAULT NULL,
+              `sunday_end_minute` INT(2) NULL DEFAULT NULL,
+              `monday_start_hour` INT(2) NULL DEFAULT NULL,
+              `monday_start_minute` INT(2) NULL DEFAULT NULL,
+              `monday_end_hour` INT(2) NULL DEFAULT NULL,
+              `monday_end_minute` INT(2) NULL DEFAULT NULL,
+              `tuesday_start_hour` INT(2) NULL DEFAULT NULL,
+              `tuesday_start_minute` INT(2) NULL DEFAULT NULL,
+              `tuesday_end_hour` INT(2) NULL DEFAULT NULL,
+              `tuesday_end_minute` INT(2) NULL DEFAULT NULL,
+              `wednesday_start_hour` INT(2) NULL DEFAULT NULL,
+              `wednesday_start_minute` INT(2) NULL DEFAULT NULL,
+              `wednesday_end_hour` INT(2) NULL DEFAULT NULL,
+              `wednesday_end_minute` INT(2) NULL DEFAULT NULL,
+              `thursday_start_hour` INT(2) NULL DEFAULT NULL,
+              `thursday_start_minute` INT(2) NULL DEFAULT NULL,
+              `thursday_end_hour` INT(2) NULL DEFAULT NULL,
+              `thursday_end_minute` INT(2) NULL DEFAULT NULL,
+              `friday_start_hour` INT(2) NULL DEFAULT NULL,
+              `friday_start_minute` INT(2) NULL DEFAULT NULL,
+              `friday_end_hour` INT(2) NULL DEFAULT NULL,
+              `friday_end_minute` INT(2) NULL DEFAULT NULL,
+              `saturday_start_hour` INT(2) NULL DEFAULT NULL,
+              `saturday_start_minute` INT(2) NULL DEFAULT NULL,
+              `saturday_end_hour` INT(2) NULL DEFAULT NULL,
+              `saturday_end_minute` INT(2) NULL DEFAULT NULL,
+              PRIMARY KEY (`id`),
+              UNIQUE KEY (`branchcode`),
+              FOREIGN KEY (branchcode) REFERENCES branches(branchcode) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        }
+            );
+        }
+
+        unless ( TableExists('curbside_pickup_opening_slots') ) {
+            $dbh->do(q{
+                CREATE TABLE `curbside_pickup_opening_slots` (
+                    `id` INT(11) NOT NULL AUTO_INCREMENT,
+                    `curbside_pickup_policy_id` INT(11) NOT NULL,
+                    `day` TINYINT(1) NOT NULL,
+                    `start_hour` INT(2) NOT NULL,
+                    `start_minute` INT(2) NOT NULL,
+                    `end_hour` INT(2) NOT NULL,
+                    `end_minute` INT(2) NOT NULL,
+                    PRIMARY KEY (`id`),
+                    FOREIGN KEY (curbside_pickup_policy_id) REFERENCES curbside_pickup_policy(id) ON DELETE CASCADE ON UPDATE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            });
+            my $existing_slots = $dbh->selectall_arrayref(q{SELECT * FROM curbside_pickup_policy}, { Slice => {} });
+            my $insert_sth = $dbh->prepare(q{INSERT INTO curbside_pickup_opening_slots ( curbside_pickup_policy_id, day, start_hour, start_minute, end_hour, end_minute ) VALUES (?, ?, ?, ?, ?, ?)});
+            for my $slot ( @$existing_slots ) {
+                my $day_i = 0;
+                for my $day ( qw( sunday monday tuesday wednesday thursday friday saturday ) ) {
+                    my $start_hour = $slot->{$day . '_start_hour'};
+                    my $start_minute = $slot->{$day . '_start_minute'};
+                    my $end_hour = $slot->{$day . '_end_hour'};
+                    my $end_minute = $slot->{$day . '_end_minute'};
+                    next unless $start_hour && $start_minute && $end_hour && $end_minute;
+                    $insert_sth->execute($slot->{id}, $day_i, $start_hour, $start_minute, $end_hour, $end_minute);
+                    $day_i++;
+                }
+            }
+            $dbh->do(q{
+                ALTER TABLE curbside_pickup_policy
+                DROP COLUMN sunday_start_hour,
+                DROP COLUMN sunday_start_minute,
+                DROP COLUMN sunday_end_hour,
+                DROP COLUMN sunday_end_minute,
+
+                DROP COLUMN monday_start_hour,
+                DROP COLUMN monday_start_minute,
+                DROP COLUMN monday_end_hour,
+                DROP COLUMN monday_end_minute,
+
+                DROP COLUMN tuesday_start_hour,
+                DROP COLUMN tuesday_start_minute,
+                DROP COLUMN tuesday_end_hour,
+                DROP COLUMN tuesday_end_minute,
+
+                DROP COLUMN wednesday_start_hour,
+                DROP COLUMN wednesday_start_minute,
+                DROP COLUMN wednesday_end_hour,
+                DROP COLUMN wednesday_end_minute,
+
+                DROP COLUMN thursday_start_hour,
+                DROP COLUMN thursday_start_minute,
+                DROP COLUMN thursday_end_hour,
+                DROP COLUMN thursday_end_minute,
+
+                DROP COLUMN friday_start_hour,
+                DROP COLUMN friday_start_minute,
+                DROP COLUMN friday_end_hour,
+                DROP COLUMN friday_end_minute,
+
+                DROP COLUMN saturday_start_hour,
+                DROP COLUMN saturday_start_minute,
+                DROP COLUMN saturday_end_hour,
+                DROP COLUMN saturday_end_minute
+            });
+        }
+
+        unless ( TableExists('curbside_pickups') ) {
+
+            $dbh->do(
+                q{
+            CREATE TABLE `curbside_pickups` (
+              `id` int(11) NOT NULL auto_increment,
+              `borrowernumber` int(11) NOT NULL,
+              `branchcode` varchar(10) NOT NULL,
+              `scheduled_pickup_datetime` datetime NOT NULL,
+              `staged_datetime` datetime NULL DEFAULT NULL,
+              `staged_by` int(11) NULL DEFAULT NULL,
+              `arrival_datetime` datetime NULL DEFAULT NULL,
+              `delivered_datetime` datetime NULL DEFAULT NULL,
+              `delivered_by` int(11) NULL DEFAULT NULL,
+              `notes` text NULL DEFAULT NULL,
+              PRIMARY KEY (`id`),
+              FOREIGN KEY (branchcode) REFERENCES branches(branchcode) ON DELETE CASCADE ON UPDATE CASCADE,
+              FOREIGN KEY (borrowernumber) REFERENCES borrowers(borrowernumber) ON DELETE CASCADE ON UPDATE CASCADE,
+              FOREIGN KEY (staged_by) REFERENCES borrowers(borrowernumber) ON DELETE SET NULL ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            }
+            );
+        }
+        unless ( TableExists('curbside_pickup_issues') ) {
+            $dbh->do(
+                q{
+            CREATE TABLE `curbside_pickup_issues` (
+              `id` int(11) NOT NULL auto_increment,
+              `curbside_pickup_id` int(11) NOT NULL,
+              `issue_id` int(11) NOT NULL,
+              `reserve_id` int(11) NOT NULL,
+              PRIMARY KEY (`id`),
+              FOREIGN KEY (curbside_pickup_id) REFERENCES curbside_pickups(id) ON DELETE CASCADE ON UPDATE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                }
+            );
+        }
+        $dbh->do(
+            q{
+                INSERT IGNORE INTO `letter` (`module`, `code`, `branchcode`, `name`, `is_html`, `title`, `content`, `message_transport_type`, `lang`) VALUES ('reserves','NEW_CURBSIDE_PICKUP','','New curbside pickup',0,"You have scheduled a curbside pickup for [% branch.branchname %]","[%- USE KohaDates -%]\n[%- SET cp = curbside_pickup -%]\n\nYou have a curbside pickup scheduled for [% cp.scheduled_pickup_datetime | $KohaDates with_hours => 1 %] at [% cp.library.branchname %].\n\nAny holds waiting for you at the pickup time will be included in this pickup. At this time, that list includes:\n[%- FOREACH h IN cp.patron.holds %]\n    [%- IF h.branchcode == cp.branchcode && h.found == 'W' %]\n* [% h.biblio.title %], [% h.biblio.author %] ([% h.item.barcode %])\n    [%- END %]\n[%- END %]\n\nOnce you have arrived, please call your library or log into your account and click the \"Alert staff of your arrival\" button to let them know you are there.",'email','default');
+            }
+        );
+
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (`variable`, `value`, `options`, `explanation`, `type` )
+            VALUES
+            ('CurbsidePickup', '0', NULL, 'Enable curbside pickup', 'YesNo')
+        });
+
+        $dbh->do(qq{
+            INSERT IGNORE permissions (module_bit, code, description)
+            VALUES
+            (1, 'manage_curbside_pickups', 'Manage curbside pickups (circulation)')
+        });
+        $dbh->do(qq{
+            INSERT IGNORE permissions (module_bit, code, description)
+            VALUES
+            (3, 'manage_curbside_pickups', 'Manage curbside pickups (admin)')
+        });
+
+        unless ( column_exists('curbside_pickup_policy', 'enable_waiting_holds_only') ) {
+            $dbh->do(q{
+                ALTER table curbside_pickup_policy
+                ADD COLUMN enable_waiting_holds_only TINYINT(1) NOT NULL DEFAULT 0 AFTER enabled
+            });
+        }
+    }
+  }
+use Modern::Perl;
+
+return {
+    bug_number  => "22456",
+    description => "Allow cancelling waiting holds",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        unless ( TableExists( 'hold_cancellation_requests' ) ) {
+            $dbh->do(q{
+                CREATE TABLE `hold_cancellation_requests` (
+                `hold_cancellation_request_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Unique ID of the cancellation request',
+                `hold_id` int(11) NOT null COMMENT 'ID of the hold',
+                `creation_date` timestamp NOT NULL DEFAULT current_timestamp() COMMENT 'Time and date the cancellation request was created',
+                PRIMARY KEY (`hold_cancellation_request_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            });
+        }
+
+        my ($count) = $dbh->selectrow_array(q{
+                SELECT COUNT(*)
+                FROM circulation_rules
+                WHERE rule_name = 'waiting_hold_cancellation'
+        });
+
+        unless ( $count ) {
+            $dbh->do(q{
+                INSERT INTO circulation_rules (rule_name, rule_value)
+                VALUES ('waiting_hold_cancellation', 0)
+            });
+        }
+        else {
+            say $out "Found already existing 'waiting_hold_cancellation' circulation rules on the DB. Please review.";
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "29012",
+    description => "Some rules are not saved when left blank while editing a 'rule' line in smart-rules.pl",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        my %default_rule_values = (
+            issuelength             => 0,
+            hardduedate             => '',
+            unseen_renewals_allowed   => '',
+            rentaldiscount          => 0,
+            decreaseloanholds       => '',
+        );
+        while (my ($rule_name, $rule_value) = each (%default_rule_values)) {
+            $dbh->do(q{
+                INSERT IGNORE INTO circulation_rules (branchcode, categorycode, itemtype, rule_name, rule_value)
+                    SELECT branchcode, categorycode, itemtype, ?, ? FROM circulation_rules cr
+                        WHERE EXISTS (
+                            SELECT * FROM circulation_rules cr2
+                                WHERE
+                                    cr2.rule_name="suspension_chargeperiod"
+                                    AND ( (cr2.branchcode=cr.branchcode) OR ( ISNULL(cr2.branchcode) AND ISNULL(cr.branchcode) ) )
+                                    AND ( (cr2.categorycode=cr.categorycode) OR ( ISNULL(cr2.categorycode) AND ISNULL(cr.categorycode) ) )
+                                    AND ( (cr2.itemtype=cr.itemtype) OR ( ISNULL(cr2.itemtype) AND ISNULL(cr.itemtype) ) )
+                        )
+                        AND NOT EXISTS (
+                            SELECT * FROM circulation_rules cr2
+                                WHERE
+                                    cr2.rule_name=?
+                                    AND ( (cr2.branchcode=cr.branchcode) OR ( ISNULL(cr2.branchcode) AND ISNULL(cr.branchcode) ) )
+                                    AND ( (cr2.categorycode=cr.categorycode) OR ( ISNULL(cr2.categorycode) AND ISNULL(cr.categorycode) ) )
+                                    AND ( (cr2.itemtype=cr.itemtype) OR ( ISNULL(cr2.itemtype) AND ISNULL(cr.itemtype) ) )
+                        )
+                        GROUP BY branchcode, categorycode, itemtype
+            }, undef, $rule_name, $rule_value, $rule_name);
+        }
+        say $out "Add default values for blank circulation rules that weren't saved to the database";
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number => "14364",
+    description => "Allow automatically canceled expired waiting holds to fill the next hold",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('ExpireReservesAutoFill','0',NULL,'Automatically fill the next hold with a automatically canceled expired waiting hold.','YesNo'),
+            ('ExpireReservesAutoFillEmail','', NULL,'. Send email notification of hold filled from automatically expired/cancelled hold to this address. If not defined, Koha will fallback to the library reply-to address','Free');
+        });
+        say $out "Added ExpireReservesAutoFill system preferences";
+
+        $dbh->do(q{
+        INSERT IGNORE INTO letter(module,code,branchcode,name,is_html,title,content,message_transport_type)
+        VALUES ( 'reserves', 'HOLD_CHANGED', '', 'Canceled hold available for different patron', '0', 'Canceled hold available for different patron', 'The patron picking up <<biblio.title>> (<<items.barcode>>) has changed to <<borrowers.firstname>> <<borrowers.surname>> (<<borrowers.cardnumber>>).
+
+Please update the hold information for this item.
+
+Title: <<biblio.title>>
+Author: <<biblio.author>>
+Item: <<items.itemcallnumber>>
+Pickup location: <<branches.branchname>>', 'email');
+        });
+        say $out "Added HOLD_CHANGED notice";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30984",
+    description => "Log the cron script that generated an action log if there is one",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        if( !column_exists( 'action_logs', 'script' ) ) {
+            $dbh->do(q{
+                ALTER TABLE action_logs
+                ADD COLUMN script varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'the name of the cron script that caused this change'
+                AFTER interface
+            });
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "28269",
+    description => "Add new system preference SearchWithISSNVariations",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do( q{
+            INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type)
+            VALUES ('SearchWithISSNVariations','0',NULL,'If enabled, search on all variations of the ISSN','YesNo')
+
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30077",
+    description => "Add new system preference IntranetAddMastheadLibraryPulldown",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (`variable`,`value`,`options`,`explanation`,`type`)
+            VALUES ('IntranetAddMastheadLibraryPulldown','0','','Add a library select pulldown menu on the staff header search','YesNo ')
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30392",
+    description => "Add deleteditems.deleted_on",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        unless ( column_exists('items', 'deleted_on') ) {
+            $dbh->do(q{
+                ALTER TABLE items
+                ADD COLUMN deleted_on DATETIME DEFAULT NULL COMMENT 'date/time of deletion'
+                AFTER timestamp
+            });
+        }
+        unless ( column_exists('deleteditems', 'deleted_on') ) {
+            $dbh->do(q{
+                ALTER TABLE deleteditems
+                ADD COLUMN deleted_on DATETIME DEFAULT NULL COMMENT 'date/time of deletion'
+                AFTER timestamp
+            });
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "31274",
+    description => "OPACSuggestionAutoFill must be 1 or 0",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            UPDATE systempreferences
+            SET value = CASE
+                            WHEN value='no'  THEN 0
+                            WHEN value='yes' THEN 1
+                            ELSE value
+                        END
+            WHERE variable='OPACSuggestionAutoFill';
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30327",
+    description => "Add biblionumber to ComponentSortField",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            UPDATE systempreferences set options="call_number|pubdate|acqdate|title|author|biblionumber"
+            WHERE variable = 'ComponentSortField'
+        });
+        say $out "Added biblionumber option to ComponentSortField";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "30500",
+    description => "Add option to allow user to change the pickup location while a hold is in transit",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` )
+            VALUES
+            ('OPACInTransitHoldPickupLocationChange','0',NULL,'Allow user to change the pickup location while a hold is in transit','YesNo')
+        });
+
+        say $out "Added new system preference 'OPACInTransitHoldPickupLocationChange'";
+    },
+  }
+use Modern::Perl;
+
+return {
+    bug_number  => "27779",
+    description => "Simplify credit descriptions",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            UPDATE account_credit_types
+            SET description = 'Refund' WHERE code = 'REFUND' AND description = 'A refund applied to a patrons fine';
+        });
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number => "29897",
+    description => "Add new system preference OPACAuthorIdentifiers",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('OPACAuthorIdentifiers','0','','Display author identifiers on the OPAC detail page','YesNo')
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "28787",
+    description => "Add new letter 2FA_OTP_TOKEN",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO `letter` (`module`, `code`, `branchcode`, `name`, `is_html`, `title`, `content`, `message_transport_type`) VALUES
+            ('members', '2FA_OTP_TOKEN', '', 'two-authentication step token', 0, 'Two-authentication step token', 'Dear [% borrower.firstname %] [% borrower.surname %] ([% borrower.cardnumber %])\r\n\r\nYour authentication token is [% otp_token %]. \r\nIt is valid one minute.', 'email')
+        });
+
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31017",
+    description => "Add type option to vendors",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        unless( column_exists('aqbooksellers','type') ){
+            $dbh->do(q{
+                ALTER TABLE aqbooksellers ADD COLUMN type varchar(255) DEFAULT NULL AFTER accountnumber
+            });
+            say $out "Added type column to aqbooksellers";
+        }
+        $dbh->do(q{
+            INSERT IGNORE INTO authorised_value_categories( category_name, is_system ) VALUES ('VENDOR_TYPE', 1);
+        });
+        say $out "Added VENDOR_TYPE authorised value category";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "23681",
+    description => "Add customisable patron restriction types",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        unless ( TableExists('restriction_types') ) {
+            $dbh->do(q{
+                CREATE TABLE `restriction_types` (
+                    `code` varchar(50) NOT NULL,
+                    `display_text` text NOT NULL,
+                    `is_system` tinyint(1) NOT NULL DEFAULT 0,
+                    `is_default` tinyint(1) NOT NULL DEFAULT 0,
+                    PRIMARY KEY (`code`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            });
+
+            say $out "Added restriction_types table";
+        }
+
+        $dbh->do(q{
+            INSERT IGNORE INTO restriction_types (code, display_text, is_system, is_default) VALUES
+            ('MANUAL',     'Manual',     0, 1),
+            ('OVERDUES',   'Overdues',   1, 0),
+            ('SUSPENSION', 'Suspension', 1, 0),
+            ('DISCHARGE',  'Discharge',  1, 0);
+        });
+        say $out "Added system restriction_types";
+
+        unless ( foreign_key_exists('borrower_debarments', 'borrower_debarments_ibfk_2') ) {
+            $dbh->do(q{
+                ALTER TABLE borrower_debarments
+                MODIFY COLUMN type varchar(50) NOT NULL
+            });
+            $dbh->do(q{
+                ALTER TABLE borrower_debarments
+                ADD CONSTRAINT `borrower_debarments_ibfk_2` FOREIGN KEY (`type`)  REFERENCES `restriction_types` (`code`) ON DELETE NO ACTION ON UPDATE CASCADE;
+            });
+
+            say $out "Added borrower_debarments relation";
+        }
+
+        $dbh->do(q{ INSERT IGNORE INTO permissions (module_bit, code, description) VALUES ( 3, 'manage_patron_restrictions', 'Manage patron restrictions')});
+        say $out "Added manage_patron_restrictions permission";
+
+        $dbh->do(q{INSERT IGNORE INTO systempreferences (variable, value, explanation, options, type) VALUES ('PatronRestrictionTypes', '0', 'If enabled, it is possible to specify the "type" of patron restriction being applied.', '', 'YesNo');});
+        say $out "Added PatronRestrictionTypes preference";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "30335",
+    description => "Add manual_invoice and manual_credit permissions",
+    up          => sub {
+        my ($args) = @_;
+        my ( $dbh, $out ) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE permissions (module_bit, code, description) VALUES
+            (10, 'manual_credit', 'Add manual credits to a patron account'),
+            (10, 'manual_invoice', 'Add manual invoices to a patron account')
+        });
+
+        $dbh->do(q{
+            INSERT IGNORE INTO user_permissions (borrowernumber, module_bit, code)
+            SELECT borrowernumber, 10, 'manual_credit' FROM user_permissions WHERE code = 'remaining_permissions'
+        });
+
+        $dbh->do(q{
+            INSERT IGNORE INTO user_permissions (borrowernumber, module_bit, code)
+            SELECT borrowernumber, 10, 'manual_invoice' FROM user_permissions WHERE code = 'remaining_permissions'
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31374",
+    description => "Add a non-public note column to the suggestions table",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        if( !column_exists( 'suggestions', 'staff_note' ) ) {
+            $dbh->do(q{
+                    ALTER TABLE suggestions
+                    ADD COLUMN staff_note longtext NULL DEFAULT NULL
+                    COMMENT "suggestions table non-public note"
+                    AFTER note
+            });
+        }
+        # Print useful stuff here
+        say $out "Add staff_note column to suggestions table";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30619",
+    description => "Add email notice for Point of Sale > RECEIPT",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        # Add RECEIPT email notice
+        $dbh->do(q{
+             INSERT IGNORE INTO letter (module, code, name, is_html, title, content, message_transport_type) VALUES ('pos', 'RECEIPT', 'Point of sale receipt', 1, "Receipt", "[% USE KohaDates %]\r\n[% USE Branches %]\r\n[% USE Price %]\r\n[% PROCESS \'accounts.inc\' %]\r\n<table>\r\n[% IF ( LibraryName ) %]\r\n <tr>\r\n    <th colspan=\'2\' class=\'centerednames\'>\r\n        <h3>[% LibraryName | html %]</h3>\r\n    </th>\r\n </tr>\r\n[% END %]\r\n <tr>\r\n    <th colspan=\'2\' class=\'centerednames\'>\r\n        <h2>[% Branches.GetName( credit.branchcode ) | html %]</h2>\r\n    </th>\r\n </tr>\r\n<tr>\r\n    <th colspan=\'2\' class=\'centerednames\'>\r\n        <h3>[% credit.date | $KohaDates %]</h3>\r\n</tr>\r\n<tr>\r\n  <td>Transaction ID: </td>\r\n  <td>[% credit.accountlines_id %]</td>\r\n</tr>\r\n<tr>\r\n  <td>Operator ID: </td>\r\n  <td>[% credit.manager_id %]</td>\r\n</tr>\r\n<tr>\r\n  <td>Payment type: </td>\r\n  <td>[% credit.payment_type %]</td>\r\n</tr>\r\n <tr></tr>\r\n <tr>\r\n    <th colspan=\'2\' class=\'centerednames\'>\r\n        <h2><u>Fee receipt</u></h2>\r\n    </th>\r\n </tr>\r\n <tr></tr>\r\n <tr>\r\n    <th>Description of charges</th>\r\n    <th>Amount</th>\r\n  </tr>\r\n\r\n  [% FOREACH debit IN credit.debits %]\r\n    <tr>\r\n        <td>[% PROCESS account_type_description account=debit %]</td>\r\n        <td>[% debit.amount * -1 | $Price %]</td>\r\n    </tr>\r\n  [% END %]\r\n\r\n<tfoot>\r\n  <tr class=\'highlight\'>\r\n    <td>Total: </td>\r\n    <td>[% credit.amount * -1| $Price %]</td>\r\n  </tr>\r\n  <tr>\r\n    <td>Tendered: </td>\r\n    <td>[% collected | $Price %]</td>\r\n  </tr>\r\n  <tr>\r\n    <td>Change: </td>\r\n    <td>[% change | $Price %]</td>\r\n    </tr>\r\n</tfoot>\r\n</table>\r\n", 'email');
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => 30483,
+    description => "Make issues.borrowernumber and issues.itemnumber NOT NULL",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            ALTER TABLE issues
+                MODIFY COLUMN borrowernumber int(11) NOT NULL COMMENT 'foreign key, linking this to the borrowers table for the patron this item was checked out to',
+                MODIFY COLUMN itemnumber int(11) NOT NULL COMMENT 'foreign key, linking this to the items table for the item that was checked out'
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "27981",
+    description => "Make it possible to force 001 = biblionumber",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type) VALUES ('autoControlNumber','OFF','biblionumber|OFF',
+            'Used to autogenerate a Control Number: biblionumber will be as biblionumber; OFF will leave it as is','Choice');
+        });
+
+        say $out "Added system preference autoControlNumber";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "20058",
+    description => "Option to use shelving location instead of homebranch for sorting",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{INSERT IGNORE INTO systempreferences (`variable`, `value`, `options`, `explanation`, `type`) VALUES
+('UseLocationAsAQInSIP', '0', '', 'Use permanent_location instead of homebranch for AQ in SIP response', 'YesNo')});
+        say $out "Syspref UseLocationAsAQInSIP has been added";
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number => "26247",
+    description => "Add new retain search terms preferences",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{INSERT IGNORE INTO systempreferences (variable,value,options,explanation,type) VALUES ('RetainCatalogSearchTerms', '1', NULL, 'If enabled, searches entered into the catalog search bar will be retained', 'YesNo') });
+        say $out "Added `RetainCatalogSearchTerms` preference";
+
+        $dbh->do(q{INSERT IGNORE INTO systempreferences (variable,value,options,explanation,type) VALUES ('RetainPatronSearchTerms', '1', NULL, 'If enabled, searches entered into the checkout and patrons search bars will be retained', 'YesNo') });
+        say $out "Added `RetainPatronsSearchTerms` preference";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => 29144,
+    description => "Copy and remove branches.opac_info",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        if ( column_exists( 'branches', 'opac_info' ) ) {
+            $dbh->do(q{
+    INSERT IGNORE INTO additional_contents ( category,code,location,branchcode,title,content,lang,published_on )
+    SELECT 'html_customizations', CONCAT('OpacLibraryInfo_', branches.branchcode), 'OpacLibraryInfo', branches.branchcode, branches.branchname, branches.opac_info, 'default', NOW()
+    FROM branches
+    WHERE branches.opac_info IS NOT NULL
+            });
+
+            $dbh->do(q{
+                ALTER TABLE branches DROP COLUMN opac_info;
+            });
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "15348",
+    description => "Add new column aqorders.estimated_delivery_date",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        unless ( column_exists( 'aqorders', 'estimated_delivery_date' ) ) {
+            $dbh->do(q{
+                ALTER TABLE aqorders
+                  ADD estimated_delivery_date date DEFAULT NULL COMMENT 'Estimated delivery date'
+                  AFTER suppliers_report
+            });
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30025",
+    description => "Split and rename BiblioAddsAuthorities system preference",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        my $biblio_adds_authorities = C4::Context->preference('BiblioAddsAuthorities');
+        # Do you stuffs here
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences
+            ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('RequireChoosingExistingAuthority',?,NULL,'Require selecting existing authority entry in controlled fields during cataloging.','YesNo'),
+            ('AutoLinkBiblios',?,NULL,'If enabled, link biblio to authorities on creation and edit','YesNo')
+        },undef,($biblio_adds_authorities eq '1' ? '0' : '1', $biblio_adds_authorities));
+        say $out "Added RequireChoosingExistingAuthority and AutoLinkBiblios";
+        $dbh->do(q{DELETE FROM systempreferences WHERE variable="BiblioAddsAuthorities";});
+        say $out "BiblioAddsAuthorities removed";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => 30472,
+    description => "borrower_relationships.guarantor_id NOT NULL",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+ALTER TABLE borrower_relationships CHANGE COLUMN guarantor_id guarantor_id int(11) NOT NULL
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => 30490,
+    description => "Adjust FK constraint for parent item type",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        if( foreign_key_exists('itemtypes', 'itemtypes_ibfk_1') ) {
+            $dbh->do(q{
+alter table itemtypes drop foreign key itemtypes_ibfk_1;
+            });
+        }
+        $dbh->do(q{
+alter table itemtypes add foreign key itemtypes_ibfk_1 (`parent_type`) REFERENCES `itemtypes` (`itemtype`);
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => 30497,
+    description => "Recreate old_reserves_ibfk_4 if cascading",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        my @info = $dbh->selectrow_array( q|SHOW CREATE TABLE old_reserves| );
+        if( $info[1] =~ /^\s*CONSTRAINT .old_reserves_ibfk_4.*CASCADE$/m ) {
+            $dbh->do( q|ALTER TABLE old_reserves DROP FOREIGN KEY old_reserves_ibfk_4| );
+            $dbh->do( q|ALTER TABLE old_reserves ADD FOREIGN KEY old_reserves_ibfk_4 (itemtype) REFERENCES itemtypes (itemtype) ON DELETE SET NULL ON UPDATE SET NULL| );
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "7021",
+    description => "Add patron category to the statistics table",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        if( !column_exists( 'statistics', 'categorycode' ) ) {
+            $dbh->do(q{
+                ALTER TABLE statistics
+                    ADD COLUMN categorycode varchar(10) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'foreign key from the borrowers table, links transaction to a specific borrower category'
+            });
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "25735",
+    description => "Add Elasticsearch field 'available'",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(qq{
+            INSERT IGNORE INTO search_field (name, label, type)
+            VALUES ('available', 'available', 'boolean')
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30484",
+    description => "Add a notice template for ILL Update notices",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{INSERT IGNORE INTO letter(module, code, branchcode, name, is_html, title, content, message_transport_type, lang) VALUES ('ill', 'ILL_REQUEST_UPDATE', '', 'ILL request update', 0, "Interlibrary loan request update", "Dear [% borrower.firstname %] [% borrower.surname %],\n\nThe Interlibrary loans request number [% illrequest.illrequest_id %] you placed for\n\n- [% ill_bib_title %] - [% ill_bib_author %]\n\nhas been updated\n\nDetails of the update are below:\n\n[% additional_text %]\n\nKind regards\n\n[% branch.branchname %]\n[% branch.branchaddress1 %]\n[% branch.branchaddress2 %]\n[% branch.branchaddress3 %]\n[% branch.branchcity %]\n[% branch.branchstate %]\n[% branch.branchzip %]\n[% branch.branchphone %]\n[% branch.branchillemail %]\n[% branch.branchemail %]", 'email', 'default');});
+        $dbh->do(q{INSERT IGNORE INTO letter(module, code, branchcode, name, is_html, title, content, message_transport_type, lang) VALUES ('ill', 'ILL_REQUEST_UPDATE', '', 'ILL request update', 0, "Interlibrary loan request update", "Dear [% borrower.firstname %] [% borrower.surname %],\n\nThe Interlibrary loans request number [% illrequest.illrequest_id %] you placed for\n\n- [% ill_bib_title %] - [% ill_bib_author %]\n\nhas been updated\n\nDetails of the update are below:\n\n[% additional_text %]\n\nKind regards\n\n[% branch.branchname %]\n[% branch.branchaddress1 %]\n[% branch.branchaddress2 %]\n[% branch.branchaddress3 %]\n[% branch.branchcity %]\n[% branch.branchstate %]\n[% branch.branchzip %]\n[% branch.branchphone %]\n[% branch.branchillemail %]\n[% branch.branchemail %]", 'sms', 'default');});
+        $dbh->do(q{INSERT IGNORE INTO message_attributes (message_name, takes_days) VALUES ('Ill_update', 0);});
+        my $ready_id = $dbh->last_insert_id(undef, undef, 'message_attributes', undef);
+        if (defined $ready_id) {
+            $dbh->do(qq(INSERT IGNORE INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES ($ready_id, 'email', 0, 'ill', 'ILL_REQUEST_UPDATE');));
+            $dbh->do(qq(INSERT IGNORE INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES ($ready_id, 'sms', 0, 'ill', 'ILL_REQUEST_UPDATE');));
+            $dbh->do(qq(INSERT IGNORE INTO message_transports (message_attribute_id, message_transport_type, is_digest, letter_module, letter_code) VALUES ($ready_id, 'phone', 0, 'ill', 'ILL_REQUEST_UPDATE');));
+            say $out "Bug 30484 DB update complete";
+        } else {
+            say $out "Bug 30484 DB update not completed";
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "23538",
+    description => "Add new system preferences EmailPatronRegistrations and EmailAddressForPatronRegistrations and new OPAC_REG letter",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{INSERT IGNORE INTO systempreferences (variable,value,options,explanation,type) VALUES ('EmailPatronRegistrations', '0', '0|EmailAddressForPatronRegistrations|BranchEmailAddress|KohaAdminEmailAddress', 'Choose email address that new patron registrations will be sent to: ', 'Choice'), ('EmailAddressForPatronRegistrations', '', '', ' If you choose EmailAddressForPatronRegistrations you have to enter a valid email address: ', 'free') });
+
+        $dbh->do(q{INSERT IGNORE INTO letter (`module`, `code`, `branchcode`, `name`, `is_html`, `title`, `content`, `message_transport_type`, `lang`) VALUES ( 'members', 'OPAC_REG', '', 'New OPAC self-registration submitted', 1, 'New OPAC self-registration',
+            '<h3>New OPAC self-registration</h3>
+            <p><h4>Self-registration made:</h4>
+            <ul>
+            <li>[% borrower.firstname %] [% borrower.surname %]</li>
+            [% IF borrower.cardnumber %]<li>Cardnumber: [% borrower.cardnumber %]</li>[% END %]
+            [% IF borrower.email %]<li>Email: [% borrower.email %]</li>[% END %]
+            [% IF borrower.phone %]<li>Phone: [% borrower.phone %]</li>[% END %]
+            [% IF borrower.mobile %]<li>Mobile: [% borrower.mobile %]</li>[% END %]
+            [% IF borrower.fax %]<li>Fax: [% borrower.fax %]</li>[% END %]
+            [% IF borrower.emailpro %]<li>Secondary email: [% borrower.emailpro %]</li>[% END %]
+            [% IF borrower.phonepro %]<li>Secondary phone:[% borrower.phonepro %]</li>[% END %]
+            [% IF borrower.branchcode %]<li>Home library: [% borrower.branchcode %]</li>[% END %]
+            [% IF borrower.categorycode %]<li>Patron category: [% borrower.categorycode %]</li>[% END %]
+            </ul>
+            </p>', 'email', 'default') });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "26368",
+    description => "Add OCLC Encoding Levels system preference",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type)
+            VALUES ('UseOCLCEncodingLevels','0',NULL,'If enabled, include OCLC encoding levels in leader value builder dropdown for position 17.','YesNo')
+        });
+        say $out "Added UseOCLCEncodingLevels system preference";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => 30571,
+    description => "Table z3950servers: three cols NOT NULL",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        # Preliminary data checks
+        my $sql = "SELECT COUNT(*) FROM z3950servers WHERE host IS NULL";
+        my ($cnt) = $dbh->selectrow_array($sql);
+        if( $cnt ) { # No host is really bad data! Remove it.
+            $dbh->do( "DELETE FROM z3950servers WHERE host IS NULL" );
+            say $out "Found bad data in table z3950servers: removed $cnt records with host undefined";
+        }
+        $sql = "SELECT host FROM z3950servers WHERE syntax IS NULL OR encoding IS NULL";
+        my $hosts = $dbh->selectcol_arrayref($sql);
+        if( @$hosts ) { # This is bad data too. We choose a default here.
+            $dbh->do( q|UPDATE z3950servers SET syntax = COALESCE(syntax, 'USMARC'), encoding = COALESCE(encoding, 'utf8')
+                WHERE syntax IS NULL OR encoding IS NULL| );
+            say $out "Corrected empty syntax or encoding for the following hosts. Please check after upgrade.";
+            say $out "Updated hosts: ". (join ',', @$hosts);
+        }
+
+        # Actual dbrev
+        $dbh->do(q{
+alter table z3950servers
+    change column `host` `host` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'target''s host name',
+    change column `syntax` `syntax` varchar(80) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'MARC format provided by this target',
+    change column `encoding` `encoding` mediumtext COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'characters encoding provided by this target';
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "29071",
+    description => "Set HoldsQueueSplitNumbering where not set",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        # Do you stuffs here
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('HoldsSplitQueueNumbering', 'actual', 'actual|virtual', 'If the holds queue is split, decide if the actual priorities should be displayed', 'Choice')
+        });
+        # Print useful stuff here
+        say $out "Added HoldsSplitQueueNumbering if not already there";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30944",
+    description => "Replace branchtransfers.cancellation_reason CancelRecall with RecallCancellation",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            ALTER TABLE branchtransfers MODIFY COLUMN cancellation_reason ENUM('Manual','StockrotationAdvance','StockrotationRepatriation','ReturnToHome','ReturnToHolding','RotatingCollection','Reserve','LostReserve','CancelReserve','ItemLost','WrongTransfer','RecallCancellation') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'what triggered the transfer cancellation'
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "25936",
+    description => "A password change notification feature",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        # Add PASSWORD_CHANGE notice
+        $dbh->do( q{
+            INSERT IGNORE INTO letter (module, code, name, title, content, message_transport_type) VALUES ('members', 'PASSWORD_CHANGE', 'Notification of password change', 'Library account password change notification',
+            "Dear [% borrower.firstname %] [% borrower.surname %],\r\n\r\nWe want to notify you that your password has been changed. If you did not change it yourself (or requested that change), please contact library staff.\r\n\r\nYour library.", 'email');
+        });
+
+        # Add systempreference
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (variable,value,explanation,options,type)
+            VALUES ('NotifyPasswordChange','0','','Notify patrons whenever their password is changed.','YesNo')
+        });
+    },
+};
+use Modern::Perl;
+return {
+    bug_number => "10950",
+    description => "Add pronouns to borrowers table",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        if( !column_exists( 'borrowers', 'pronouns' ) ) {
+            $dbh->do(q{
+                ALTER TABLE borrowers
+                ADD COLUMN pronouns longtext NULL DEFAULT NULL
+                COMMENT "patron/borrower's pronouns"
+                AFTER initials
+            });
+            say $out "Added pronouns column to borrowers table";
+        }
+        if( !column_exists( 'deletedborrowers', 'pronouns' ) ) {
+            $dbh->do(q{
+                ALTER TABLE deletedborrowers
+                ADD COLUMN pronouns longtext NULL DEFAULT NULL
+                COMMENT "patron/borrower's pronouns"
+                AFTER initials
+            });
+            say $out "Added pronouns column to deletedborrowers table";
+        }
+        if( !column_exists( 'borrower_modifications', 'pronouns' ) ) {
+            $dbh->do(q{
+                ALTER TABLE borrower_modifications
+                ADD COLUMN pronouns longtext NULL DEFAULT NULL
+                COMMENT "patron/borrower's pronouns"
+                AFTER initials
+            });
+            say $out "Added pronouns column to borrower_modifications table";
+        }
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number => "31333",
+    description => "Add new suggestionPatronCategoryExceptions system preference",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{INSERT IGNORE INTO systempreferences (variable,value,options,explanation,type) VALUES ('suggestionPatronCategoryExceptions', '', '', 'List the patron categories not affected by suggestion system preference if on', 'Free') });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "27136",
+    description => "Add missing languages: Cree, Afrikaans and Multiple languages, Undetermined and No linguistic content",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{ INSERT IGNORE INTO language_subtag_registry (subtag, type, description, added) VALUES ('cr', 'language', 'Cree', now()) });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('cr', 'language', 'en', 'Cree') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('cr', 'language', 'fr', 'Cree') });
+        $dbh->do(q{ INSERT IGNORE INTO language_rfc4646_to_iso639 (rfc4646_subtag, iso639_2_code) VALUES ('cr', 'cre') });
+
+        $dbh->do(q{ INSERT IGNORE INTO language_subtag_registry (subtag, type, description, added) VALUES ('af', 'language', 'Afrikaans', now()) });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('af', 'language', 'en', 'Afrikaans') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('af', 'language', 'fr', 'Afrikaans') });
+        $dbh->do(q{ INSERT IGNORE INTO language_rfc4646_to_iso639 (rfc4646_subtag, iso639_2_code) VALUES ('af', 'afr') });
+
+        $dbh->do(q{ INSERT IGNORE INTO language_subtag_registry (subtag, type, description, added) VALUES ('mul', 'language', 'Multiple languages', now()) });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('mul', 'language', 'en', 'Multiple languages') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('mul', 'language', 'fr', 'Multilingue') });
+        $dbh->do(q{ INSERT IGNORE INTO language_rfc4646_to_iso639 (rfc4646_subtag, iso639_2_code) VALUES ('mul', 'mul') });
+
+        $dbh->do(q{ INSERT IGNORE INTO language_subtag_registry (subtag, type, description, added) VALUES ('und', 'language', 'Undetermined', now()) });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('und', 'language', 'en', 'Undetermined') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('und', 'language', 'fr', 'Indéterminée') });
+        $dbh->do(q{ INSERT IGNORE INTO language_rfc4646_to_iso639 (rfc4646_subtag, iso639_2_code) VALUES ('und', 'und') });
+
+        $dbh->do(q{ INSERT IGNORE INTO language_subtag_registry (subtag, type, description, added) VALUES ('zxx', 'language', 'No linguistic content', now()) });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('zxx', 'language', 'en', 'No linguistic content') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('zxx', 'language', 'fr', 'Pas de contenu linguistique') });
+        $dbh->do(q{ INSERT IGNORE INTO language_rfc4646_to_iso639 (rfc4646_subtag, iso639_2_code) VALUES ('zxx', 'zxx') });
+        say $out "Added missing languages";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31569",
+    description => "Add primary key for import_biblios",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        unless( primary_key_exists('import_biblios') ){
+            $dbh->do(q{ALTER TABLE import_biblios ADD PRIMARY KEY (import_record_id)});
+            say $out "Added primary key to import_biblios table";
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "14783",
+    description => "Allow patrons to change pickup location for non-waiting holds",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (variable, value, options, explanation, type)
+            VALUES ('OPACAllowUserToChangeBranch','','Pending, In-Transit, Suspended','Allow users to change the library to pick up a hold for these statuses:','multiple');
+        });
+
+        $dbh->do(q{
+            UPDATE systempreferences
+            SET value=(SELECT CASE WHEN value=1 THEN 'intransit' ELSE '' END FROM systempreferences WHERE variable='OPACInTransitHoldPickupLocationChange')
+            WHERE variable='OPACAllowUserToChangeBranch'
+        });
+
+        say $out "Added new system preference 'OPACAllowUserToChangeBranch'";
+
+        $dbh->do(q{
+            DELETE FROM systempreferences
+            WHERE variable = 'OPACInTransitHoldPickupLocationChange'
+        });
+
+        say $out "Removed system preference 'OPACInTransitHoldPickupLocationChange'";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "25426",
+    description => "Add new syspref CircControlReturnsBranch",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences VALUES (
+              'CircControlReturnsBranch','ItemHomeLibrary','ItemHomeLibrary|ItemHoldingLibrary|CheckInLibrary',
+              'Specify the agency that controls the return policy','Choice'
+            )
+        });
+
+        say $out "Added new system preference 'CircControlReturnsBranch'";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31626",
+    description => "Add letter id to the message queue table",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        unless ( column_exists( 'message_queue', 'letter_id' ) ) {
+            $dbh->do(q{
+                ALTER TABLE message_queue
+                ADD COLUMN `letter_id` int(11) DEFAULT NULL COMMENT 'Foreign key to the letters table' AFTER message_id,
+                ADD CONSTRAINT letter_fk FOREIGN KEY (letter_id) REFERENCES letter(id) ON DELETE SET NULL ON UPDATE CASCADE
+            });
+
+            say $out "Added 'letter_id' column to 'message_queue' table";
+        }
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "17170",
+    description => "Add permission for creating saved search filters",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO permissions (module_bit, code, description) VALUES
+            (3, 'manage_search_filters', 'Manage custom search filters');
+        });
+        say $out "Added manage_search_filters permission";
+        unless( TableExists( 'search_filters' ) ){
+            $dbh->do(q{
+                CREATE TABLE `search_filters` (
+                `search_filter_id` int(11) NOT NULL AUTO_INCREMENT,
+                `name` varchar(255) NOT NULL COMMENT 'filter name',
+                `query` mediumtext NULL DEFAULT NULL COMMENT 'filter query part',
+                `limits` mediumtext NULL DEFAULT NULL COMMENT 'filter limits part',
+                `opac` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'whether this filter is shown on OPAC',
+                `staff_client` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'whether this filter is shown in staff client',
+                PRIMARY KEY (`search_filter_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            });
+            say $out "Added search_filters table";
+        } else {
+            say $out "search_filters table already created";
+        }
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('SavedSearchFilters', '0', NULL, 'Allow staff with permission to create/edit custom search filters', 'YesNo')
+        });
+        say $out "Added SavedSearchFilters system preference";
+    },
+}
+use Modern::Perl;
+
+return {
+    bug_number => "30588",
+    description => "Add an 'enforce' option for TwoFactorAuthentication",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            UPDATE systempreferences
+            SET options="enforced|enabled|disabled",
+                value=CASE value WHEN '1' THEN 'enabled' ELSE 'disabled' END,
+                type="Choice"
+            WHERE variable="TwoFactorAuthentication"
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31715",
+    description => "Add missing German (de) language translations",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        # Do you stuffs here
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'am', 'language', 'de', 'Amharisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'az', 'language', 'de', 'Aserbaidschanisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'be', 'language', 'de', 'Belarussisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'bn', 'language', 'de', 'Bengalisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'eu', 'language', 'de', 'Baskisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'fo', 'language', 'de', 'Färöisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'is', 'language', 'de', 'Isländisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'mi', 'language', 'de', 'Maorisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'mi', 'language', 'de', 'Maorisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'mn', 'language', 'de', 'Mongolisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'mr', 'language', 'de', 'Marathi') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'ms', 'language', 'de', 'Malaiisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'ne', 'language', 'de', 'Nepali') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'pbr', 'language', 'de', 'Pangwa') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'prs', 'language', 'de', 'Dari') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'rw', 'language', 'de', 'Kinyarwanda') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'sd', 'language', 'de', 'Sindhi') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'sk', 'language', 'de', 'Slowakisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'sl', 'language', 'de', 'Slowenisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'sq', 'language', 'de', 'Albanisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'sw', 'language', 'de', 'Swahili') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'ta', 'language', 'de', 'Tamil') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'tl', 'language', 'de', 'Tagalog') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUEs ( 'Armn', 'script', 'de', 'Armenisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUEs ( 'Ethi', 'script', 'en', 'Äthiopisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUEs ( 'Jpan', 'script', 'de', 'Japanisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUEs ( 'Knda', 'script', 'de', 'Kannada') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUEs ( 'Kore', 'script', 'de', 'Koreanisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('et', 'language', 'de', 'Estnisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('lv', 'language', 'de', 'Lettisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('lt', 'language', 'de', 'Litauisch') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('iu', 'language', 'de', 'Inuktitut') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ('ik', 'language', 'de', 'Inupiaq') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'cr', 'language', 'de', 'Cree') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'af', 'language', 'de', 'Afrikaans') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'mul', 'language', 'de', 'Mehrsprachig') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'und', 'language', 'de', 'Unbestimmt') });
+        $dbh->do(q{ INSERT IGNORE INTO language_descriptions (subtag, type, lang, description) VALUES ( 'zxx', 'language', 'de', 'Kein sprachlicher Inhalt') });
+
+        # Print useful stuff here
+        say $out "German (de) translations were added";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31577",
+    description => "Add category list pull-down to OpacHiddenItemsExceptions",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        # Do you stuffs here
+        $dbh->do(q{
+            UPDATE systempreferences SET value = REPLACE(value,"|",","),
+            explanation = REPLACE(explanation,"separated by |,","separated by comma,")
+            WHERE variable = "OpacHiddenItemsExceptions"
+        });
+        # Print useful stuff here
+        say $out "Settings for OpacHiddenItemsExceptions have been updated";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "23012",
+    description => "Add PROCESSING_FOUND to account_credit_types",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{INSERT IGNORE INTO account_credit_types ( code, description, can_be_added_manually, is_system ) VALUES ('PROCESSING_FOUND', 'Lost item processing fee refund', 0, 1) });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number  => "24381",
+    description => "Update accounts notices",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        # ACCOUNT_CREDIT
+        my $account_credit = q{
+[%- USE AuthorisedValues -%]
+[%- USE KohaDates -%]
+[%- USE Price -%]
+[%- PROCESS "accounts.inc" -%]
+<table>
+    [% IF ( LibraryName ) %]
+    <tr>
+        <th colspan="2" class="centerednames">
+        <h3>[% LibraryName | html %]</h3>
+        </th>
+    </tr>
+    [% END %]
+    [% IF credit.library %]
+    <tr>
+        <th colspan="2" class="centerednames">
+        <h2>[% credit.library.branchname | html %]</h2>
+        </th>
+    </tr>
+    [% END %]
+    <tr>
+        <th colspan="2" class="centerednames">
+        <h3>[% today | $KohaDates %]</h3>
+        </th>
+    </tr>
+    <tr>
+        <td>Transaction ID: </td>
+        <td>[% credit.accountlines_id %]</td>
+    </tr>
+    <tr>
+        <td>Operator ID: </td>
+        <td>[% credit.manager_id %]</td>
+    </tr>
+    [% IF credit.payment_type %]
+    <tr>
+        <td>Payment type: </td>
+        <td>[% AuthorisedValues.GetByCode('PAYMENT_TYPE', credit.payment_type) %]</td>
+    </tr>
+    [% END %]
+    <tr>
+        <th colspan="2" class="centerednames">
+        <h2><u>[%- PROCESS credit_type_description credit_type = credit.credit_type -%] receipt</u></h2>
+        </th>
+    </tr>
+    [% IF ( credit.credit_type_code == 'PAYMENT' ) %]
+    <tr>
+        <th colspan="2">
+        Received with thanks from  [% credit.patron.firstname | html %] [% credit.patron.surname | html %] <br />
+        Card number: [% credit.patron.cardnumber | html %]<br />
+        </th>
+    </tr>
+    [% ELSIF ( credit.credit_type_code == 'CREDIT' ) %]
+    <tr>
+        <th colspan="2">
+        Credit added to account for [% credit.patron.firstname | html %] [% credit.patron.surname | html %] <br />
+        Card number: [% credit.patron.cardnumber | html %]<br />
+        </th>
+    </tr>
+    [% ELSIF ( credit.credit_type_code == 'WRITEOFF' ) %]
+    <tr>
+        <th colspan="2">
+        Writeoff added to account for [% credit.patron.firstname | html %] [% credit.patron.surname | html %] <br />
+        Card number: [% credit.patron.cardnumber | html %]<br />
+        </th>
+    </tr>
+    [% END %]
+    [% IF credit.amountoutstanding + 0 != 0 %]
+    <tr>
+        <th>Description of credit</th>
+        <th>Amount</th>
+    </tr>
+    <tr>
+        <td>[%- PROCESS credit_type_description credit_type = credit.credit_type -%]</td>
+        <td>[% credit.amount * -1 | $Price %]</td>
+    </tr>
+    <tr>
+        <th style="text-align:right;">Total available:</th>
+        <td>[% credit.amountoutstanding * -1 | $Price %]</td>
+    </tr>
+    [% END %]
+    [% IF credit.amount != credit.amountoutstanding %]
+    <tr>
+        <th>Description of charges</th>
+        <th>Amount</th>
+    </tr>
+    [% FOREACH offset IN credit.credit_offsets %]
+    <tr>
+        <td>[% PROCESS account_type_description account=offset.debit %][% IF ( offset.debit.itemnumber ) %] - [% offset.debit.item.biblio.title %][% END %]</td>
+        <td>[% offset.amount * -1 | $Price %]</td>
+    </tr>
+    [% END %]
+    [% END %]
+    <tfoot>
+    <tr class="highlight">
+        <td>Total:</td>
+        <td>[% credit.amount * -1 | $Price %]</td>
+    </tr>
+    [% IF change.defined %]
+    <tr>
+        <td>Change given: </td>
+        <td>[% change | $Price %]</td>
+    </tr>
+    [% END %]
+    <tr>
+        <td colspan="2"></td>
+    </tr>
+    <tr>
+        <td>Account balance as on date:</td>
+        <td>[% credit.patron.account.balance * -1 | $Price %]</td>
+    </tr>
+    </tfoot>
+</table>
+        };
+
+        my $account_credit_old = q{<table>[%IF(LibraryName)%]<tr><thcolspan="4"class="centerednames"><h3>[%LibraryName|html%]</h3></th></tr>[%END%]<tr><thcolspan="4"class="centerednames"><h2><u>Feereceipt</u></h2></th></tr><tr><thcolspan="4"class="centerednames"><h2>[%Branches.GetName(patron.branchcode)|html%]</h2></th></tr><tr><thcolspan="4">Receivedwiththanksfrom[%patron.firstname|html%][%patron.surname|html%]<br/>Cardnumber:[%patron.cardnumber|html%]<br/></th></tr><tr><th>Date</th><th>Descriptionofcharges</th><th>Note</th><th>Amount</th></tr>[%FOREACHaccountINaccounts%]<trclass="highlight"><td>[%account.date|$KohaDates%]</td><td>[%PROCESSaccount_type_descriptionaccount=account%][%-IFaccount.description%],[%account.description|html%][%END%]</td><td>[%account.note|html%]</td>[%IF(account.amountcredit)%]<tdclass="credit">[%ELSE%]<tdclass="debit">[%END%][%account.amount|$Price%]</td></tr>[%END%]<tfoot><tr><tdcolspan="3">Totaloutstandingduesasondate:</td>[%IF(totalcredit)%]<tdclass="credit">[%ELSE%]<tdclass="debit">[%END%][%total|$Price%]</td></tr></tfoot></table>};
+
+        my $sth = $dbh->prepare(q{
+            UPDATE letter SET content = ? WHERE code = 'ACCOUNT_CREDIT' AND REPLACE(REPLACE(content, ' ', ''), '\n','') = ?
+        });
+        $sth->execute( $account_credit, $account_credit_old );
+
+        # replace patron variable with credit.patron
+        $dbh->do("UPDATE letter SET content = REPLACE(content, '[% patron', '[% credit.patron') WHERE code = 'ACCOUNT_CREDIT' ");
+        # replace library variable with credit.library.branchname
+        $dbh->do("UPDATE letter SET content = REPLACE(content, '[% library', '[% credit.library.branchname') WHERE code = 'ACCOUNT_CREDIT' ");
+        # replace offsets variable with credit.offsets
+        $dbh->do("UPDATE letter SET content = REPLACE(content, ' offsets %]', ' credit.offsets %]') WHERE code = 'ACCOUNT_CREDIT' ");
+        # replace change_given variable with change
+        $dbh->do("UPDATE letter SET content = REPLACE(content, '[% change_given', '[% change') WHERE code = 'ACCOUNT_CREDIT' ");
+
+        # ACCOUNT_DEBIT
+        my $account_debit = q{
+[% PROCESS "accounts.inc" %]
+[%- USE Price -%]
+[%- USE KohaDates -%]
+<table>
+    [% IF ( LibraryName ) %]
+    <tr>
+        <th colspan="3" class="centerednames">
+        <h3>[% LibraryName | html %]</h3>
+        </th>
+    </tr>
+    [% END %]
+    [% IF debit.library %]
+    <tr>
+        <th colspan="3" class="centerednames">
+        <h2>[% debit.library.branchname | html %]</h2>
+        </th>
+    </tr>
+    [% END %]
+    <tr>
+        <td colspan="2" style="text-align:right;">Fee ID: </td>
+        <td>[% debit.accountlines_id %]</td>
+    </tr>
+    [% IF credit.manager_id %]
+    <tr>
+        <td colspan="2" style="text-align:right;">Operator ID: </td>
+        <td>[% credit.manager_id %]</td>
+    </tr>
+    [% END %]
+    <tr>
+        <th colspan="3" class="centerednames">
+        <h2><u>Invoice</u></h2>
+        </th>
+    </tr>
+    <tr>
+        <th colspan="3" >
+        Bill to: [% debit.patron.firstname | html %] [% debit.patron.surname | html %] <br />
+        Card number: [% debit.patron.cardnumber | html %]<br />
+        </th>
+    </tr>
+    [% IF debit.amountoutstanding != 0 %]
+    <tr>
+        <th>Date</th>
+        <th>Description of charges</th>
+        <th>Amount</th>
+    </tr>
+    <tr>
+        <td>[% debit.date | $KohaDates %]</td>
+        <td>[% PROCESS account_type_description account=debit %]</td>
+        <td>[% debit.amount | $Price %]</td>
+    </tr>
+    <tr>
+        <td colspan="2" style="text-align:right;">Total owed:</td>
+        <td>[% debit.amount | $Price %]</td>
+    </tr>
+    [% END %]
+    [% IF debit.amount != debit.amountoutstanding %]
+    <tr>
+        <th>Date</th>
+        <th>Description of payments</th>
+        <th>Amount</th>
+    </tr>
+    [% FOREACH offset IN debit.debit_offsets %]
+    <tr>
+        <td>[% offset.credit.date | $KohaDates %]</td>
+        <td>[% PROCESS account_type_description account=offset.credit %]</td>
+        <td>[% offset.amount * -1 | $Price %]</td>
+    </tr>
+    [% END %]
+    <tr class="highlight">
+        <td colspan="2" style="text-align:right;">Total paid:</td>
+        <td>[% debit.amount - debit.amountoutstanding | $Price %]</td>
+    </tr>
+    [% END %]
+    </tr>
+        <td colspan="3"></td>
+    <tr>
+    <tfoot>
+    <tr>
+        <th colspan="2" style="text-align:right;">Total outstanding:</th>
+        <td>[% debit.amountoutstanding | $Price %]</td>
+    </tr>
+    </tfoot>
+</table>
+        };
+
+        my $account_debit_old = q{<table>[%IF(LibraryName)%]<tr><thcolspan="5"class="centerednames"><h3>[%LibraryName|html%]</h3></th></tr>[%END%]<tr><thcolspan="5"class="centerednames"><h2><u>INVOICE</u></h2></th></tr><tr><thcolspan="5"class="centerednames"><h2>[%Branches.GetName(patron.branchcode)|html%]</h2></th></tr><tr><thcolspan="5">Billto:[%patron.firstname|html%][%patron.surname|html%]<br/>Cardnumber:[%patron.cardnumber|html%]<br/></th></tr><tr><th>Date</th><th>Descriptionofcharges</th><th>Note</th><thstyle="text-align:right;">Amount</th><thstyle="text-align:right;">Amountoutstanding</th></tr>[%FOREACHaccountINaccounts%]<trclass="highlight"><td>[%account.date|$KohaDates%]</td><td>[%PROCESSaccount_type_descriptionaccount=account%][%-IFaccount.description%],[%account.description|html%][%END%]</td><td>[%account.note|html%]</td>[%IF(account.amountcredit)%]<tdclass="credit">[%ELSE%]<tdclass="debit">[%END%][%account.amount|$Price%]</td>[%IF(account.amountoutstandingcredit)%]<tdclass="credit">[%ELSE%]<tdclass="debit">[%END%][%account.amountoutstanding|$Price%]</td></tr>[%END%]<tfoot><tr><tdcolspan="4">Totaloutstandingduesasondate:</td>[%IF(totalcredit)%]<tdclass="credit">[%ELSE%]<tdclass="debit">[%END%][%total|$Price%]</td></tr></tfoot></table>};
+
+        $sth = $dbh->prepare(q{
+            UPDATE letter SET content = ? WHERE code = 'ACCOUNT_DEBIT' AND REPLACE(REPLACE(content, ' ', ''), '\n','') = ?
+        });
+        $sth->execute($account_debit, $account_debit_old);
+
+        # replace patron variable with debit.patron
+        $dbh->do("UPDATE letter SET content = REPLACE(content, '[% patron', '[% debit.patron') WHERE code = 'ACCOUNT_DEBIT' ");
+        # replace library variable with debit.library.branchname
+        $dbh->do("UPDATE letter SET content = REPLACE(content, '[% library', '[% debit.library.branchname') WHERE code = 'ACCOUNT_DEBIT' ");
+        # replace offsets variable with debit.offsets
+        $dbh->do("UPDATE letter SET content = REPLACE(content, ' offsets %]', ' debit.offsets %]') WHERE code = 'ACCOUNT_DEBIT' ");
+        # replace total variable with debit.patron.account.balance
+        $dbh->do("UPDATE letter SET content = REPLACE(content, '[% total ', '[% debit.patron.account.balance ') WHERE code = 'ACCOUNT_DEBIT' ");
+        # replace totalcredit variable with debit.patron.account.balance <= 0
+        $dbh->do("UPDATE letter SET content = REPLACE(content, 'totalcredit', 'debit.patron.account.balance <= 0') WHERE code = 'ACCOUNT_DEBIT' ");
+
+        # RECEIPT
+        my $receipt = q{
+[% PROCESS "accounts.inc" %]
+[%- USE KohaDates -%]
+[%- USE Price -%]
+<table>
+    [% IF ( LibraryName ) %]
+    <tr>
+        <th colspan="2" class="centerednames">
+        <h3>[% LibraryName | html %]</h3>
+        </th>
+    </tr>
+    [% END %]
+    [% IF credit.library %]
+    <tr>
+        <th colspan="2" class="centerednames">
+        <h2>[% payment.library.branchname ) | html %]</h2>
+        </th>
+    </tr>
+    [% END %]
+    <tr>
+        <th colspan="2" class="centerednames">
+        <h3>[% payment.date | $KohaDates %]</h3>
+        </th>
+    </tr>
+    <tr>
+        <td>Transaction ID: </td>
+        <td>[% payment.accountlines_id %]</td>
+    </tr>
+    <tr>
+        <td>Operator ID: </td>
+        <td>[% payment.manager_id %]</td>
+    </tr>
+    <tr>
+        <td>Payment type: </td>
+        <td>[% payment.payment_type %]</td>
+    </tr>
+    <tr>
+        <th colspan="2" class="centerednames">
+        <h2><u>Payment receipt</u></h2>
+        </th>
+    </tr>
+    <tr>
+        <th>Description of charges</th>
+        <th>Amount</th>
+    </tr>
+    [% FOREACH offset IN payment.credit_offsets %]
+    <tr>
+        <td>[% PROCESS account_type_description account=offset.debit %]</td>
+        <td>[% offset.amount * -1 | $Price %]</td>
+    </tr>
+    [% END %]
+    <tfoot>
+    <tr class="highlight">
+        <td>Total:</td>
+        <td>[% payment.amount * -1 | $Price %]</td>
+    </tr>
+    <tr>
+        <td>Tendered: </td>
+        <td>[% tendered | $Price %]</td>
+    </tr>
+    <tr>
+        <td>Change given:</td>
+        <td>[% change | $Price %]</td>
+    </tr>
+    </tfoot>
+</table>
+        };
+
+        my $receipt_old = q{[%PROCESS"accounts.inc"%]<table>[%IF(LibraryName)%]<tr><thcolspan="2"class="centerednames"><h3>[%LibraryName|html%]</h3></th></tr>[%END%]<tr><thcolspan="2"class="centerednames"><h2>[%Branches.GetName(payment.branchcode)|html%]</h2></th></tr><tr><thcolspan="2"class="centerednames"><h3>[%payment.date|$KohaDates%]</h3></tr><tr><td>TransactionID:</td><td>[%payment.accountlines_id%]</td></tr><tr><td>OperatorID:</td><td>[%payment.manager_id%]</td></tr><tr><td>Paymenttype:</td><td>[%payment.payment_type%]</td></tr><tr></tr><tr><thcolspan="2"class="centerednames"><h2><u>Feereceipt</u></h2></th></tr><tr></tr><tr><th>Descriptionofcharges</th><th>Amount</th></tr>[%FOREACHoffsetINoffsets%]<tr><td>[%PROCESSaccount_type_descriptionaccount=offset.debit%]</td><td>[%offset.amount*-1|$Price%]</td></tr>[%END%]<tfoot><trclass="highlight"><td>Total:</td><td>[%payment.amount*-1|$Price%]</td></tr><tr><td>Tendered:</td><td>[%collected|$Price%]</td></tr><tr><td>Change:</td><td>[%change|$Price%]</td></tr></tfoot></table>};
+
+        $sth = $dbh->prepare(q{
+            UPDATE letter SET content = ? WHERE code = 'RECEIPT' AND REPLACE(REPLACE(content, ' ', ''), '\n','') = ?
+        });
+        $sth->execute($receipt,$receipt_old);
+
+        # replace offsets variable with debit.offsets
+        $dbh->do("UPDATE letter SET content = REPLACE(content, ' offsets %]', ' payment.offsets %]') WHERE code = 'RECEIPT' ");
+        # replace collected variable with tendered
+        $dbh->do("UPDATE letter SET content = REPLACE(content, '[% collected', '[% tendered') WHERE code = 'RECEIPT' ");
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => '30036',
+    description => 'Add syspref AuthorityXSLTOpacResultsDisplay',
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences (`variable`, `value`, `options`, `explanation`, `type`)
+            VALUES ('AuthorityXSLTOpacResultsDisplay','','','Enable XSL stylesheet control over authority results page in the OPAC','Free')
+        });
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "30407",
+    description => "Add ability to syspref UpdateNotForLoanStatusOnCheckin to show only the notforloan values message",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        # Do you stuffs here
+        $dbh->do(q{UPDATE IGNORE systempreferences SET explanation = "This is a list of value pairs. When an item is checked in, if the not for loan value on the left matches the items not for loan value it will be updated to the right-hand value. E.g. '-1: 0' will cause an item that was set to 'Ordered' to now be available for loan. Can be used for showing only the not for loan description. E.g. '-1: ONLYMESSAGE'. Each pair of values should be on a separate line." WHERE variable = "UpdateNotForLoanStatusOnCheckin"});
+        say $out "Update is going well so far";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31948",
+    description => "Add timestamp to tmp_holdsqueue table",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        $dbh->do(q{ALTER TABLE `tmp_holdsqueue` ADD `timestamp` timestamp NOT NULL default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP AFTER item_level_request});
+        say $out "";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "29792",
+    description => "Add AutomaticConfirmTransfer system preference",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+        $dbh->do(q{
+            INSERT IGNORE INTO systempreferences ( `variable`, `value`, `options`, `explanation`, `type` ) VALUES
+            ('AutomaticConfirmTransfer','0',NULL,'Defines whether transfers should be automatically confirmed at checkin if modal dismissed','YesNo')
+        });
+        # Print useful stuff here
+        say $out "AutomaticConfirmTransfer system preference added";
+    },
+};
+use Modern::Perl;
+
+return {
+    bug_number => "31713",
+    description => "Add ACCOUNTS_SUMMARY slip notice",
+    up => sub {
+        my ($args) = @_;
+        my ($dbh, $out) = @$args{qw(dbh out)};
+
+        my $slip_content = <<~'END_CONTENT';
+[% USE Branches %]
+[% USE Koha %]
+[% USE KohaDates %]
+[% USE Price %]
+[% PROCESS 'accounts.inc' %]
+<table>
+  [% IF ( Koha.Preference('LibraryName') ) %]
+    <tr>
+      <th colspan='4' class='centerednames'>
+        <h1>[% Koha.Preference('LibraryName') | html %]</h1>
+      </th>
+    </tr>
+  [% END %]
+
+  <tr>
+    <th colspan='4' class='centerednames'>
+      <h2>[% Branches.GetName( borrower.branchcode ) | html %]</h2>
+    </th>
+  </tr>
+
+  <tr>
+    <th colspan='4' class='centerednames'>
+      <h3>Outstanding accounts</h3>
+    </th>
+  </tr>
+
+  <tr>
+    <th colspan='4' class='centerednames'>
+      <h4>Debts</h4>
+    </th>
+  </tr>
+  [% IF borrower.account.outstanding_debits.total_outstanding %]
+  <tr>
+    <th>Date</th>
+    <th>Charge</th>
+    <th>Amount</th>
+    <th>Outstanding</th>
+  </tr>
+  [% FOREACH debit IN borrower.account.outstanding_debits %]
+  <tr>
+    <td>[% debit.date | $KohaDates %]</td>
+    <td>
+      [% PROCESS account_type_description account=debit %]
+      [%- IF debit.description %], [% debit.description | html %][% END %]
+    </td>
+    <td class='debit'>[% debit.amount | $Price %]</td>
+    <td class='debit'>[% debit.amountoutstanding | $Price %]</td>
+  </tr>
+  [% END %]
+  [% ELSE %]
+  <tr>
+    <td colspan='4'>There are no outstanding debts on your account</td>
+  </tr>
+  [% END %]
+
+  <tr>
+    <th colspan='4' class='centerednames'>
+      <h4>Credits</h4>
+    </th>
+  </tr>
+  [% IF borrower.account.outstanding_credits.total_outstanding %]
+  <tr>
+    <th>Date</th>
+    <th>Credit</th>
+    <th>Amount</th>
+    <th>Outstanding</th>
+  </tr>
+  [% FOREACH credit IN borrower.account.outstanding_credits %]
+  <tr>
+    <td>[% credit.date | $KohaDates %]</td>
+    <td>
+      [% PROCESS account_type_description account=credit %]
+      [%- IF credit.description %], [% credit.description | html %][% END %]
+    </td>
+    <td class='credit'>[% credit.amount *-1 | $Price %]</td>
+    <td class='credit'>[% credit.amountoutstanding *-1 | $Price %]</td>
+  </tr>
+  [% END %]
+  [% ELSE %]
+  <tr>
+    <td colspan='4'>There are no outstanding credits on your account</td>
+  </tr>
+  [% END %]
+
+  <tfoot>
+    <tr>
+      <td colspan='3'>
+        [% IF borrower.account.balance < 0 %]
+          Total credit as of [% today | $KohaDates %]:
+        [% ELSE %]
+          Total outstanding dues as of [% today | $KohaDates %]:
+        [% END %]
+      </td>
+      [% IF ( borrower.account.balance <= 0 ) %]<td class='credit'>[% borrower.account.balance * -1 | $Price %]</td>
+      [% ELSE %]<td class='debit'>[% borrower.account.balance | $Price %]</td>[% END %]
+    </tr>
+  </tfoot>
+</table>
+END_CONTENT
+
+        $dbh->do(qq{
+           INSERT IGNORE INTO letter ( module, code, branchcode, name, is_html, title, content, message_transport_type, lang)
+           VALUES ( 'members', 'ACCOUNTS_SUMMARY', '', 'Account balance slip', 1, 'Account summary for [% borrower.firstname %] [% borrower.surname %]', "$slip_content", 'print', 'default' )
+        });
+        say $out "Notice added";
+    },
+};
