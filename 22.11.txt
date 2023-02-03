@@ -4,7 +4,7 @@ use utf8;
 use Encode qw( encode_utf8 );
 
 return {
-    bug_number => undef,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=32470
    description => 'Increase DBRev for 22.06',
     up => sub {
         my ($args) = @_;
@@ -36,7 +36,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => 30850,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30850
     description => 'Message about mappings changes for 110$a',
     up => sub {
         my ($args) = @_;
@@ -49,7 +49,7 @@ q|110$a was added as a default mapping for biblio.author in MARC21. This will on
 ===============================================================
 
 return {
-    bug_number  => 30924,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30924
     description => "Add missing RecallCancellation option to branchtransfers.reason ENUM",
     up => sub {
         my ($args) = @_;
@@ -65,7 +65,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "12446",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=12446
     description => "Ability to allow guarantor relationship for all patron category types",
     up => sub {
         my ($args) = @_;
@@ -89,7 +89,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "24239",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=24239
     description => "Add due_date to illrequests",
     up => sub {
         my ($args) = @_;
@@ -107,7 +107,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "21978",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=21978
     description => "Add middle_name to borrowers table",
     up => sub {
         my ($args) = @_;
@@ -166,7 +166,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "29129",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29129
     description => "Update the DisplayClearnScreenButton system pref to allow for a choice between ISSUESLIP and ISSUEQSLIP",
     up => sub {
         my ($args) = @_;
@@ -188,7 +188,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30327",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30327
     description => "Add ComponentSortField and ComponentSortOrder sysprefs",
     up => sub {
         my ($args) = @_;
@@ -204,7 +204,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30889",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30889
     description => "Add calling context information to background_jobs",
     up => sub {
         my ($args) = @_;
@@ -223,7 +223,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30823",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30823
     description => "Replace recalls FULFILL actions with FILL in action logs",
     up => sub {
         my ($args) = @_;
@@ -235,7 +235,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30275",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30275
     description => "Add a checkout_renewals table",
     up => sub {
         my ($args) = @_;
@@ -267,7 +267,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "24010",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=24010
     description => "Make subscription.staffdisplaycount and opacdisplaycount integer columns",
     up => sub {
         my ($args) = @_;
@@ -299,7 +299,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "24865",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=24865
     description => "Customize the Accountlines Description",
     up => sub {
         my ($args) = @_;
@@ -314,7 +314,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "24857",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=24857
     description => "Add ability to group items on a record",
     up => sub {
         my ($args) = @_;
@@ -363,7 +363,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "28854",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=28854
     description => "Item bundles support",
     up => sub {
         my ($args) = @_;
@@ -435,7 +435,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "29632",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29632
     description => "Add callnumber type to allow sorting",
     up => sub {
         my ($args) = @_;
@@ -451,7 +451,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => 11889,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=11889
     description => "Add pref ListOwnershipUponPatronDeletion",
     up => sub {
         my ($args) = @_;
@@ -464,7 +464,7 @@ INSERT IGNORE INTO systempreferences (`variable`,`value`,`options`,`explanation`
 ===============================================================
 
 return {
-    bug_number => 30933,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30933
     description => "Add pref ListOwnerDesignated",
     up => sub {
         my ($args) = @_;
@@ -482,7 +482,7 @@ WHERE variable = 'ListOwnershipUponPatronDeletion'
 ===============================================================
 
 return {
-    bug_number => "31086",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31086
     description => "Do not allow null values in branchcodes for reserves",
     up => sub {
         my ($args) = @_;
@@ -536,7 +536,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31157",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31157
     description => "Add OverdueNoticeFrom preference",
     up => sub {
         my ($args) = @_;
@@ -551,7 +551,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "30650",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30650
     description => "Curbside pickup tables",
     up          => sub {
         my ($args) = @_;
@@ -740,7 +740,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "22456",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=22456
     description => "Allow cancelling waiting holds",
     up => sub {
         my ($args) = @_;
@@ -777,7 +777,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "29012",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29012
     description => "Some rules are not saved when left blank while editing a 'rule' line in smart-rules.pl",
     up => sub {
         my ($args) = @_;
@@ -818,7 +818,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "14364",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=14364
     description => "Allow automatically canceled expired waiting holds to fill the next hold",
     up => sub {
         my ($args) = @_;
@@ -847,7 +847,7 @@ Pickup location: <<branches.branchname>>', 'email');
 ===============================================================
 
 return {
-    bug_number => "30984",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30984
     description => "Log the cron script that generated an action log if there is one",
     up => sub {
         my ($args) = @_;
@@ -864,7 +864,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "28269",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=28269
     description => "Add new system preference SearchWithISSNVariations",
     up => sub {
         my ($args) = @_;
@@ -880,7 +880,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30077",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30077
     description => "Add new system preference IntranetAddMastheadLibraryPulldown",
     up => sub {
         my ($args) = @_;
@@ -894,7 +894,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30392",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30392
     description => "Add deleteditems.deleted_on",
     up => sub {
         my ($args) = @_;
@@ -918,7 +918,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "31274",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31274
     description => "OPACSuggestionAutoFill must be 1 or 0",
     up => sub {
         my ($args) = @_;
@@ -938,7 +938,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30327",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30327
     description => "Add biblionumber to ComponentSortField",
     up => sub {
         my ($args) = @_;
@@ -953,7 +953,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "30500",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30500
     description => "Add option to allow user to change the pickup location while a hold is in transit",
     up => sub {
         my ($args) = @_;
@@ -971,7 +971,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "27779",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=27779
     description => "Simplify credit descriptions",
     up => sub {
         my ($args) = @_;
@@ -986,7 +986,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "29897",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29897
     description => "Add new system preference OPACAuthorIdentifiers",
     up => sub {
         my ($args) = @_;
@@ -1000,7 +1000,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "28787",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=28787
     description => "Add new letter 2FA_OTP_TOKEN",
     up => sub {
         my ($args) = @_;
@@ -1015,7 +1015,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31017",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31017
     description => "Add type option to vendors",
     up => sub {
         my ($args) = @_;
@@ -1035,7 +1035,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "23681",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=23681
     description => "Add customisable patron restriction types",
     up => sub {
         my ($args) = @_;
@@ -1087,7 +1087,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "30335",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30335
     description => "Add manual_invoice and manual_credit permissions",
     up          => sub {
         my ($args) = @_;
@@ -1112,7 +1112,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31374",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31374
     description => "Add a non-public note column to the suggestions table",
     up => sub {
         my ($args) = @_;
@@ -1132,7 +1132,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30619",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30619
     description => "Add email notice for Point of Sale > RECEIPT",
     up => sub {
         my ($args) = @_;
@@ -1146,7 +1146,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => 30483,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30483
     description => "Make issues.borrowernumber and issues.itemnumber NOT NULL",
     up => sub {
         my ($args) = @_;
@@ -1161,7 +1161,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "27981",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=27981
     description => "Make it possible to force 001 = biblionumber",
     up => sub {
         my ($args) = @_;
@@ -1178,7 +1178,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "20058",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=20058
     description => "Option to use shelving location instead of homebranch for sorting",
     up => sub {
         my ($args) = @_;
@@ -1191,7 +1191,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "26247",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=26247
     description => "Add new retain search terms preferences",
     up => sub {
         my ($args) = @_;
@@ -1207,7 +1207,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => 29144,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29144
     description => "Copy and remove branches.opac_info",
     up => sub {
         my ($args) = @_;
@@ -1230,7 +1230,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "15348",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=15348
     description => "Add new column aqorders.estimated_delivery_date",
     up => sub {
         my ($args) = @_;
@@ -1248,7 +1248,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30025",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30025
     description => "Split and rename BiblioAddsAuthorities system preference",
     up => sub {
         my ($args) = @_;
@@ -1269,7 +1269,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => 30472,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30472
     description => "borrower_relationships.guarantor_id NOT NULL",
     up => sub {
         my ($args) = @_;
@@ -1282,7 +1282,7 @@ ALTER TABLE borrower_relationships CHANGE COLUMN guarantor_id guarantor_id int(1
 ===============================================================
 
 return {
-    bug_number => 30490,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30490
     description => "Adjust FK constraint for parent item type",
     up => sub {
         my ($args) = @_;
@@ -1300,7 +1300,7 @@ alter table itemtypes add foreign key itemtypes_ibfk_1 (`parent_type`) REFERENCE
 ===============================================================
 
 return {
-    bug_number => 30497,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30497
     description => "Recreate old_reserves_ibfk_4 if cascading",
     up => sub {
         my ($args) = @_;
@@ -1316,7 +1316,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "7021",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=7021
     description => "Add patron category to the statistics table",
     up => sub {
         my ($args) = @_;
@@ -1333,12 +1333,11 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "25735",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=25735
     description => "Add Elasticsearch field 'available'",
     up => sub {
         my ($args) = @_;
         my ($dbh, $out) = @$args{qw(dbh out)};
-
         $dbh->do(qq{
             INSERT IGNORE INTO search_field (name, label, type)
             VALUES ('available', 'available', 'boolean')
@@ -1348,7 +1347,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30484",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30484
     description => "Add a notice template for ILL Update notices",
     up => sub {
         my ($args) = @_;
@@ -1370,7 +1369,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "23538",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=23538
     description => "Add new system preferences EmailPatronRegistrations and EmailAddressForPatronRegistrations and new OPAC_REG letter",
     up => sub {
         my ($args) = @_;
@@ -1399,7 +1398,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "26368",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=26368
     description => "Add OCLC Encoding Levels system preference",
     up => sub {
         my ($args) = @_;
@@ -1414,7 +1413,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => 30571,
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30571
     description => "Table z3950servers: three cols NOT NULL",
     up => sub {
         my ($args) = @_;
@@ -1448,7 +1447,7 @@ alter table z3950servers
 ===============================================================
 
 return {
-    bug_number => "29071",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29071
     description => "Set HoldsQueueSplitNumbering where not set",
     up => sub {
         my ($args) = @_;
@@ -1465,7 +1464,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30944",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30944
     description => "Replace branchtransfers.cancellation_reason CancelRecall with RecallCancellation",
     up => sub {
         my ($args) = @_;
@@ -1479,7 +1478,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "25936",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=25936
     description => "A password change notification feature",
     up => sub {
         my ($args) = @_;
@@ -1500,7 +1499,7 @@ return {
 };
 ===============================================================
 return {
-    bug_number => "10950",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=10950
     description => "Add pronouns to borrowers table",
     up => sub {
         my ($args) = @_;
@@ -1537,7 +1536,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31333",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31333
     description => "Add new suggestionPatronCategoryExceptions system preference",
     up => sub {
         my ($args) = @_;
@@ -1549,7 +1548,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "27136",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=27136
     description => "Add missing languages: Cree, Afrikaans and Multiple languages, Undetermined and No linguistic content",
     up => sub {
         my ($args) = @_;
@@ -1584,7 +1583,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31569",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31569
     description => "Add primary key for import_biblios",
     up => sub {
         my ($args) = @_;
@@ -1598,7 +1597,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "14783",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=14783
     description => "Allow patrons to change pickup location for non-waiting holds",
     up => sub {
         my ($args) = @_;
@@ -1628,7 +1627,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "25426",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=25426
     description => "Add new syspref CircControlReturnsBranch",
     up => sub {
         my ($args) = @_;
@@ -1647,7 +1646,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31626",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31626
     description => "Add letter id to the message queue table",
     up => sub {
         my ($args) = @_;
@@ -1666,7 +1665,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "17170",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=17170
     description => "Add permission for creating saved search filters",
     up => sub {
         my ($args) = @_;
@@ -1702,7 +1701,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30588",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30588
     description => "Add an 'enforce' option for TwoFactorAuthentication",
     up => sub {
         my ($args) = @_;
@@ -1719,7 +1718,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31715",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31715
     description => "Add missing German (de) language translations",
     up => sub {
         my ($args) = @_;
@@ -1771,7 +1770,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31577",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31577
     description => "Add category list pull-down to OpacHiddenItemsExceptions",
     up => sub {
         my ($args) = @_;
@@ -1789,7 +1788,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "23012",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=23012
     description => "Add PROCESSING_FOUND to account_credit_types",
     up => sub {
         my ($args) = @_;
@@ -1801,7 +1800,7 @@ return {
 ===============================================================
 
 return {
-    bug_number  => "24381",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=24381
     description => "Update accounts notices",
     up => sub {
         my ($args) = @_;
@@ -2128,7 +2127,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => '30036',
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30036
     description => 'Add syspref AuthorityXSLTOpacResultsDisplay',
     up => sub {
         my ($args) = @_;
@@ -2143,7 +2142,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "30407",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=30407
     description => "Add ability to syspref UpdateNotForLoanStatusOnCheckin to show only the notforloan values message",
     up => sub {
         my ($args) = @_;
@@ -2156,7 +2155,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31948",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31948
     description => "Add timestamp to tmp_holdsqueue table",
     up => sub {
         my ($args) = @_;
@@ -2169,7 +2168,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "29792",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=29792
     description => "Add AutomaticConfirmTransfer system preference",
     up => sub {
         my ($args) = @_;
@@ -2185,7 +2184,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "31713",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=31713
     description => "Add ACCOUNTS_SUMMARY slip notice",
     up => sub {
         my ($args) = @_;
