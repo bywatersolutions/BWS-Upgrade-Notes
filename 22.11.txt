@@ -1,10 +1,11 @@
 ===============================================================
+
 use utf8;
 use Encode qw( encode_utf8 );
 
 return {
     bug_number => undef,
-    description => 'Increase DBRev for 22.06',
+   description => 'Increase DBRev for 22.06',
     up => sub {
         my ($args) = @_;
         my ($dbh, $out) = @$args{qw(dbh out)};
@@ -18,7 +19,7 @@ return {
 ===============================================================
 
 return {
-    bug_number => "23659",
+    https://bugs.koha-community.org/bugzilla3/show_bug.cgi?id=23659
     description => "Add DefaultHoldPickupLocation syspref",
     up => sub {
         my ($args) = @_;
