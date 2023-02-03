@@ -1,4 +1,4 @@
-use Modern::Perl;
+===============================================================
 use utf8;
 use Encode qw( encode_utf8 );
 
@@ -15,7 +15,7 @@ return {
         say $out encode_utf8 '📜 until we know what is more than enough.';
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "23659",
@@ -32,7 +32,7 @@ return {
         say $out "Added DefaultHoldPickupLocation syspref";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => 30850,
@@ -45,7 +45,7 @@ return {
 q|110$a was added as a default mapping for biblio.author in MARC21. This will only change the mapping on new installations. If you wish to change the mappings on your existing installation, go to Administration > Koha to MARC mapping and add 110$a to biblio.author and then run batchRebuilBiblioTables.pl.|;
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => 30924,
@@ -61,7 +61,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "12446",
@@ -85,7 +85,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "24239",
@@ -103,7 +103,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "21978",
@@ -162,7 +162,7 @@ return {
         }
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "29129",
@@ -184,7 +184,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30327",
@@ -200,7 +200,7 @@ return {
         say $out "Added ComponentSortField and ComponentSortOrder sysprefs";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30889",
@@ -219,7 +219,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30823",
@@ -231,7 +231,7 @@ return {
         $dbh->do(q{ UPDATE action_logs SET action = 'FILL' WHERE action = 'FULFILL' AND module = 'RECALLS' });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30275",
@@ -263,7 +263,7 @@ return {
         }
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "24010",
@@ -295,7 +295,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "24865",
@@ -310,7 +310,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "24857",
@@ -359,7 +359,7 @@ return {
         }
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "28854",
@@ -414,7 +414,7 @@ return {
         }
     }
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "28854",
@@ -431,7 +431,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "29632",
@@ -447,7 +447,7 @@ return {
         say $out "Add callnumber to search_field type enum";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => 11889,
@@ -460,7 +460,7 @@ INSERT IGNORE INTO systempreferences (`variable`,`value`,`options`,`explanation`
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => 30933,
@@ -478,7 +478,7 @@ WHERE variable = 'ListOwnershipUponPatronDeletion'
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31086",
@@ -532,7 +532,7 @@ return {
         say $out "Removed NULL option from branchcode for reserves";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31157",
@@ -547,7 +547,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "30650",
@@ -736,7 +736,7 @@ return {
         }
     }
   }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "22456",
@@ -773,7 +773,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "29012",
@@ -814,7 +814,7 @@ return {
         say $out "Add default values for blank circulation rules that weren't saved to the database";
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "14364",
@@ -843,7 +843,7 @@ Pickup location: <<branches.branchname>>', 'email');
         say $out "Added HOLD_CHANGED notice";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30984",
@@ -860,7 +860,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "28269",
@@ -876,7 +876,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30077",
@@ -890,7 +890,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30392",
@@ -914,7 +914,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "31274",
@@ -934,7 +934,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30327",
@@ -949,7 +949,7 @@ return {
         say $out "Added biblionumber option to ComponentSortField";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "30500",
@@ -967,7 +967,7 @@ return {
         say $out "Added new system preference 'OPACInTransitHoldPickupLocationChange'";
     },
   }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "27779",
@@ -982,7 +982,7 @@ return {
         });
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "29897",
@@ -996,7 +996,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "28787",
@@ -1011,7 +1011,7 @@ return {
 
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31017",
@@ -1031,7 +1031,7 @@ return {
         say $out "Added VENDOR_TYPE authorised value category";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "23681",
@@ -1083,7 +1083,7 @@ return {
         say $out "Added PatronRestrictionTypes preference";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "30335",
@@ -1108,7 +1108,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31374",
@@ -1128,7 +1128,7 @@ return {
         say $out "Add staff_note column to suggestions table";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30619",
@@ -1142,7 +1142,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => 30483,
@@ -1157,7 +1157,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "27981",
@@ -1174,7 +1174,7 @@ return {
         say $out "Added system preference autoControlNumber";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "20058",
@@ -1187,7 +1187,7 @@ return {
         say $out "Syspref UseLocationAsAQInSIP has been added";
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "26247",
@@ -1203,7 +1203,7 @@ return {
         say $out "Added `RetainPatronsSearchTerms` preference";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => 29144,
@@ -1226,7 +1226,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "15348",
@@ -1244,7 +1244,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30025",
@@ -1265,7 +1265,7 @@ return {
         say $out "BiblioAddsAuthorities removed";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => 30472,
@@ -1278,7 +1278,7 @@ ALTER TABLE borrower_relationships CHANGE COLUMN guarantor_id guarantor_id int(1
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => 30490,
@@ -1296,7 +1296,7 @@ alter table itemtypes add foreign key itemtypes_ibfk_1 (`parent_type`) REFERENCE
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => 30497,
@@ -1312,7 +1312,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "7021",
@@ -1329,7 +1329,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "25735",
@@ -1344,7 +1344,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30484",
@@ -1366,7 +1366,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "23538",
@@ -1395,7 +1395,7 @@ return {
             </p>', 'email', 'default') });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "26368",
@@ -1410,7 +1410,7 @@ return {
         say $out "Added UseOCLCEncodingLevels system preference";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => 30571,
@@ -1444,7 +1444,7 @@ alter table z3950servers
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "29071",
@@ -1461,7 +1461,7 @@ return {
         say $out "Added HoldsSplitQueueNumbering if not already there";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30944",
@@ -1475,7 +1475,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "25936",
@@ -1497,7 +1497,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 return {
     bug_number => "10950",
     description => "Add pronouns to borrowers table",
@@ -1533,7 +1533,7 @@ return {
         }
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31333",
@@ -1545,7 +1545,7 @@ return {
         $dbh->do(q{INSERT IGNORE INTO systempreferences (variable,value,options,explanation,type) VALUES ('suggestionPatronCategoryExceptions', '', '', 'List the patron categories not affected by suggestion system preference if on', 'Free') });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "27136",
@@ -1580,7 +1580,7 @@ return {
         say $out "Added missing languages";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31569",
@@ -1594,7 +1594,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "14783",
@@ -1624,7 +1624,7 @@ return {
         say $out "Removed system preference 'OPACInTransitHoldPickupLocationChange'";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "25426",
@@ -1643,7 +1643,7 @@ return {
         say $out "Added new system preference 'CircControlReturnsBranch'";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31626",
@@ -1662,7 +1662,7 @@ return {
         }
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "17170",
@@ -1698,7 +1698,7 @@ return {
         say $out "Added SavedSearchFilters system preference";
     },
 }
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30588",
@@ -1715,7 +1715,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31715",
@@ -1767,7 +1767,7 @@ return {
         say $out "German (de) translations were added";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31577",
@@ -1785,7 +1785,7 @@ return {
         say $out "Settings for OpacHiddenItemsExceptions have been updated";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "23012",
@@ -1797,7 +1797,7 @@ return {
         $dbh->do(q{INSERT IGNORE INTO account_credit_types ( code, description, can_be_added_manually, is_system ) VALUES ('PROCESSING_FOUND', 'Lost item processing fee refund', 0, 1) });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number  => "24381",
@@ -2124,7 +2124,7 @@ return {
         $dbh->do("UPDATE letter SET content = REPLACE(content, '[% collected', '[% tendered') WHERE code = 'RECEIPT' ");
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => '30036',
@@ -2139,7 +2139,7 @@ return {
         });
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "30407",
@@ -2152,7 +2152,7 @@ return {
         say $out "Update is going well so far";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31948",
@@ -2165,7 +2165,7 @@ return {
         say $out "";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "29792",
@@ -2181,7 +2181,7 @@ return {
         say $out "AutomaticConfirmTransfer system preference added";
     },
 };
-use Modern::Perl;
+===============================================================
 
 return {
     bug_number => "31713",
